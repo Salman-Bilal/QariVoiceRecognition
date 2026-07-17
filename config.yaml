@@ -1,0 +1,42 @@
+﻿audio:
+  sample_rate: 16000
+  channels: 1
+  format: wav
+
+segmentation:
+  window_seconds: 4
+  hop_seconds: 2
+
+mfcc:
+  n_mfcc: 13
+  include_delta: true
+  include_delta2: true
+
+pitch:
+  fmin_note: "C2"
+  fmax_note: "C7"
+
+dataset:
+  num_qaris: 10
+  num_surahs: 8
+  train_surahs_per_qari: 6
+  val_surahs_per_qari: 1
+  test_surahs_per_qari: 1
+
+embedding_model:
+  name: "speechbrain/spkrec-ecapa-voxceleb"
+  savedir: "pretrained_models/spkrec-ecapa-voxceleb"
+  embedding_dim: 192
+
+training:
+  batch_size: 32
+  learning_rate: 0.001
+  epochs: 100
+  early_stopping_patience: 10
+
+paths:
+  raw_dataset: "dataset/raw"
+  processed_dataset: "dataset/processed"
+  splits_file: "splits.json"
+  scaler_file: "feature_extraction/scaler.pkl"
+  logs: "logs"

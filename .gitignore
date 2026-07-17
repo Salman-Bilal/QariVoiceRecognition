@@ -1,0 +1,12 @@
+﻿venv/
+__pycache__/
+*.pyc
+dataset/raw/
+dataset/processed/
+pretrained_models/
+*.npy
+*.pkl
+*.pt
+*.pth
+logs/
+.DS_Store

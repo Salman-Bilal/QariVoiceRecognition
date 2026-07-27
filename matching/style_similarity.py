@@ -21,15 +21,27 @@ Why these weights?
   maqam color, melodic movement). Rhythm is slightly less weighted because users
   often recite at different speeds. Breath is the lightest weight as it varies
   the most with recording length.
+
+Similarity method — Z-score normalisation + cosine similarity:
+  Each feature is Z-score normalised using the population mean/std computed
+  across ALL Qari profiles at build time.  This guarantees that:
+    * Features with low inter-Qari variance (e.g. voiced_ratio) do not dominate.
+    * Features with high inter-Qari variance (e.g. pitch_std_norm) contribute
+      proportionally more.
+    * The full 0–100 score range is exercised for every query, eliminating
+      the "compressed distribution" problem seen with Gaussian decay.
+  After normalisation the cosine similarity between the user Z-vector and each
+  Qari Z-vector is mapped from [-1, 1] to [0, 100].
 """
 
 import numpy as np
 import pickle
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from matching.style_profiles import (
     extract_style_features_from_file,
+    load_style_profiles_and_stats,
     load_style_profiles,
     STYLE_PROFILES_PATH,
 )
@@ -37,98 +49,143 @@ from matching.style_profiles import (
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Lazy-loaded profiles cache
+# Lazy-loaded profiles + stats cache
 # ─────────────────────────────────────────────────────────────────────────────
 
 _style_profiles: Optional[Dict[str, Dict]] = None
+_inter_qari_stats: Optional[Dict[str, Dict]] = None
 
 
-def _get_profiles() -> Dict[str, Dict]:
-    global _style_profiles
+def _get_profiles_and_stats() -> Tuple[Dict[str, Dict], Optional[Dict[str, Dict]]]:
+    global _style_profiles, _inter_qari_stats
     if _style_profiles is None:
-        _style_profiles = load_style_profiles(STYLE_PROFILES_PATH)
-    return _style_profiles
+        _style_profiles, _inter_qari_stats = load_style_profiles_and_stats(STYLE_PROFILES_PATH)
+    return _style_profiles, _inter_qari_stats
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Per-feature similarity functions
+# Z-score + cosine similarity helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _feature_similarity(user_val: float, ref_val: float, scale: float) -> float:
+def _zscore_vector(
+    feat_dict: Dict,
+    feature_names: List[str],
+    group_stats: Dict,
+) -> np.ndarray:
     """
-    Compute similarity for a single scalar feature using a Gaussian decay.
+    Build a Z-score normalised feature vector from a feature dict.
 
-    similarity = exp( -(user_val - ref_val)^2 / (2 * scale^2) ) * 100
+    For each feature f:
+        z_f = (value_f - population_mean_f) / population_std_f
 
-    `scale` controls tolerance: small scale = strict matching, large scale = lenient.
-    Result is 0–100.
+    population_mean/std come from group_stats (computed across all 12 Qaris
+    at profile-build time).  If stats are unavailable (legacy file), raw values
+    are used unchanged.
     """
-    diff = user_val - ref_val
-    return float(100.0 * np.exp(-(diff ** 2) / (2.0 * scale ** 2)))
+    vec = np.array([feat_dict.get(f, 0.0) for f in feature_names], dtype=float)
+
+    if group_stats:
+        means = np.array([group_stats[f]["mean"] for f in feature_names], dtype=float)
+        stds  = np.array(
+            [max(group_stats[f]["std"], 1e-6) for f in feature_names], dtype=float
+        )
+        vec = (vec - means) / stds
+
+    return vec
 
 
-def compute_pitch_similarity(user_pitch: Dict, ref_pitch: Dict) -> float:
+def _cosine_similarity_to_score(user_vec: np.ndarray, ref_vec: np.ndarray) -> float:
     """
-    Compare user pitch features to a Qari's reference pitch profile.
+    Compute cosine similarity between two vectors and map to [0, 100].
 
-    Features and their tolerances (scale):
-      - pitch_std_norm   (0.15) — how much pitch variation; key style indicator
-      - pitch_range_norm (0.25) — melodic range width
-      - pitch_p25        (0.20) — lower quartile of pitch distribution
-      - pitch_p75        (0.20) — upper quartile of pitch distribution
-      - voiced_ratio     (0.15) — fraction of time spent on voiced sound
+    cosine ∈ [-1, 1]  →  score = (cosine + 1) / 2 × 100  ∈ [0, 100]
 
-    pitch_mean_norm is intentionally excluded — it's always ~1.0 after
-    normalization and adds no discriminative value.
+    A score of 100 means identical direction (perfect style match).
+    A score of  50 means orthogonal (unrelated style).
+    A score of   0 means opposite direction (maximally different style).
     """
-    scores = [
-        _feature_similarity(user_pitch["pitch_std_norm"],   ref_pitch["pitch_std_norm"],   0.15),
-        _feature_similarity(user_pitch["pitch_range_norm"], ref_pitch["pitch_range_norm"],  0.25),
-        _feature_similarity(user_pitch["pitch_p25"],        ref_pitch["pitch_p25"],         0.20),
-        _feature_similarity(user_pitch["pitch_p75"],        ref_pitch["pitch_p75"],         0.20),
-        _feature_similarity(user_pitch["voiced_ratio"],     ref_pitch["voiced_ratio"],      0.15),
-    ]
-    return float(np.mean(scores))
+    norm_u = np.linalg.norm(user_vec)
+    norm_r = np.linalg.norm(ref_vec)
+
+    if norm_u < 1e-8 or norm_r < 1e-8:
+        return 50.0  # degenerate vector → neutral score
+
+    cosine = float(np.dot(user_vec, ref_vec) / (norm_u * norm_r))
+    cosine = float(np.clip(cosine, -1.0, 1.0))
+    return float((cosine + 1.0) / 2.0 * 100.0)
 
 
-def compute_rhythm_similarity(user_rhythm: Dict, ref_rhythm: Dict) -> float:
+# ─────────────────────────────────────────────────────────────────────────────
+# Per-component similarity functions
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Features used for each component (must match keys in the profile dicts)
+PITCH_FEATURES  = ["pitch_std_norm", "pitch_range_norm", "pitch_p25", "pitch_p75", "voiced_ratio"]
+RHYTHM_FEATURES = ["onset_rate_hz", "ioi_mean_sec", "ioi_cv"]
+BREATH_FEATURES = ["pause_rate", "pause_ratio", "avg_pause_sec", "phrase_pause_ratio"]
+
+
+def compute_pitch_similarity(
+    user_pitch: Dict,
+    ref_pitch: Dict,
+    pitch_stats: Optional[Dict] = None,
+) -> float:
     """
-    Compare user rhythm features to a Qari's reference rhythm profile.
+    Compare pitch features via Z-score normalised cosine similarity.
 
-    Features and tolerances:
-      - onset_rate_hz   (1.5)  — syllables/onsets per second (recitation speed)
-      - ioi_mean_sec    (0.08) — average time between syllables
-      - ioi_cv          (0.20) — rhythm regularity (murattal=regular, mujawwad=free)
+    Features:
+      - pitch_std_norm   — how much pitch variation (vibrato vs flat delivery)
+      - pitch_range_norm — melodic range width
+      - pitch_p25        — lower quartile of pitch distribution
+      - pitch_p75        — upper quartile of pitch distribution
+      - voiced_ratio     — fraction of time spent on voiced sound
 
-    tempo_bpm excluded because it correlates strongly with onset_rate and
-    ioi_mean — including it would double-count those effects.
-    ioi_std excluded to avoid redundancy with ioi_cv.
+    pitch_mean_norm is excluded — it's always ~1.0 after per-speaker
+    normalisation and provides no discriminative value.
     """
-    scores = [
-        _feature_similarity(user_rhythm["onset_rate_hz"], ref_rhythm["onset_rate_hz"], 1.5),
-        _feature_similarity(user_rhythm["ioi_mean_sec"],  ref_rhythm["ioi_mean_sec"],  0.08),
-        _feature_similarity(user_rhythm["ioi_cv"],        ref_rhythm["ioi_cv"],        0.20),
-    ]
-    return float(np.mean(scores))
+    user_vec = _zscore_vector(user_pitch, PITCH_FEATURES, pitch_stats or {})
+    ref_vec  = _zscore_vector(ref_pitch,  PITCH_FEATURES, pitch_stats or {})
+    return _cosine_similarity_to_score(user_vec, ref_vec)
 
 
-def compute_breath_similarity(user_breath: Dict, ref_breath: Dict) -> float:
+def compute_rhythm_similarity(
+    user_rhythm: Dict,
+    ref_rhythm: Dict,
+    rhythm_stats: Optional[Dict] = None,
+) -> float:
     """
-    Compare user breath/phrasing features to a Qari's reference breath profile.
+    Compare rhythm features via Z-score normalised cosine similarity.
 
-    Features and tolerances:
-      - pause_rate          (0.10) — pauses per second (phrasing density)
-      - pause_ratio         (0.08) — fraction of time silent
-      - avg_pause_sec       (0.25) — how long each pause is
-      - phrase_pause_ratio  (2.0)  — talking-vs-pausing balance
+    Features:
+      - onset_rate_hz   — syllables/onsets per second (recitation speed)
+      - ioi_mean_sec    — average time between syllables
+      - ioi_cv          — rhythm regularity (murattal=regular, mujawwad=free)
+
+    tempo_bpm and ioi_std excluded — strongly correlated with the above,
+    would double-count those effects.
     """
-    scores = [
-        _feature_similarity(user_breath["pause_rate"],         ref_breath["pause_rate"],         0.10),
-        _feature_similarity(user_breath["pause_ratio"],        ref_breath["pause_ratio"],         0.08),
-        _feature_similarity(user_breath["avg_pause_sec"],      ref_breath["avg_pause_sec"],       0.25),
-        _feature_similarity(user_breath["phrase_pause_ratio"], ref_breath["phrase_pause_ratio"],  2.0),
-    ]
-    return float(np.mean(scores))
+    user_vec = _zscore_vector(user_rhythm, RHYTHM_FEATURES, rhythm_stats or {})
+    ref_vec  = _zscore_vector(ref_rhythm,  RHYTHM_FEATURES, rhythm_stats or {})
+    return _cosine_similarity_to_score(user_vec, ref_vec)
+
+
+def compute_breath_similarity(
+    user_breath: Dict,
+    ref_breath: Dict,
+    breath_stats: Optional[Dict] = None,
+) -> float:
+    """
+    Compare breath/phrasing features via Z-score normalised cosine similarity.
+
+    Features:
+      - pause_rate          — pauses per second (phrasing density)
+      - pause_ratio         — fraction of time silent
+      - avg_pause_sec       — how long each pause is
+      - phrase_pause_ratio  — talking-vs-pausing balance
+    """
+    user_vec = _zscore_vector(user_breath, BREATH_FEATURES, breath_stats or {})
+    ref_vec  = _zscore_vector(ref_breath,  BREATH_FEATURES, breath_stats or {})
+    return _cosine_similarity_to_score(user_vec, ref_vec)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -144,6 +201,10 @@ BREATH_WEIGHT = 0.25
 def compare_style_to_all_qaris(audio_path: str) -> List[Dict]:
     """
     Compare a user's recitation audio against all Qari style profiles.
+
+    Uses Z-score normalised cosine similarity so that the full 0–100 score
+    range is always exercised and low-variance features do not suppress the
+    spread of the distribution.
 
     Args:
         audio_path: Path to the user's audio file (wav, mp3, m4a, flac supported)
@@ -179,19 +240,30 @@ def compare_style_to_all_qaris(audio_path: str) -> List[Dict]:
     user_rhythm = user_features["rhythm"]
     user_breath = user_features["breath"]
 
-    # 2. Load Qari profiles
-    profiles = _get_profiles()
+    # 2. Load Qari profiles + inter-Qari statistics
+    profiles, stats = _get_profiles_and_stats()
     if not profiles:
         raise RuntimeError(
             "No Qari style profiles found. Run: python matching/build_style_profiles.py"
         )
 
+    if stats is None:
+        print(
+            "[WARN] Inter-Qari statistics not found in profile file.\n"
+            "       Falling back to raw cosine similarity (no Z-score normalisation).\n"
+            "       Re-run: python matching/build_style_profiles.py"
+        )
+
+    pitch_stats  = stats["pitch"]  if stats else None
+    rhythm_stats = stats["rhythm"] if stats else None
+    breath_stats = stats["breath"] if stats else None
+
     # 3. Compare against each Qari
     results = []
     for qari_name, profile in profiles.items():
-        pitch_score  = compute_pitch_similarity(user_pitch,  profile["pitch"])
-        rhythm_score = compute_rhythm_similarity(user_rhythm, profile["rhythm"])
-        breath_score = compute_breath_similarity(user_breath, profile["breath"])
+        pitch_score  = compute_pitch_similarity(user_pitch,  profile["pitch"],  pitch_stats)
+        rhythm_score = compute_rhythm_similarity(user_rhythm, profile["rhythm"], rhythm_stats)
+        breath_score = compute_breath_similarity(user_breath, profile["breath"], breath_stats)
 
         overall = (
             pitch_score  * PITCH_WEIGHT +
@@ -213,7 +285,7 @@ def compare_style_to_all_qaris(audio_path: str) -> List[Dict]:
         # Style description based on dominant matching feature
         dominant = max(
             [("pitch", pitch_score), ("rhythm", rhythm_score), ("breath", breath_score)],
-            key=lambda x: x[1]
+            key=lambda x: x[1],
         )
         desc_map = {
             "pitch":  "Your melody and pitch contour closely resemble this Qari's style.",

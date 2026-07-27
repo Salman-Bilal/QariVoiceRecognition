@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # preprocessing/pipeline.py
 import os
 import librosa
@@ -16,4 +17,24 @@ def preprocess_file(input_path, output_path):
     y = trim_silence(y, sr)
 
     sf.write(output_path, y, sr, subtype="PCM_16")
+=======
+# preprocessing/pipeline.py
+import os
+import librosa
+import soundfile as sf
+from preprocessing.normalize import normalize_audio, TARGET_SR
+from preprocessing.silence import trim_silence
+from preprocessing.noise import reduce_noise
+
+def preprocess_file(input_path, output_path):
+    # Step 1: format normalize (also handles resample + mono + loudness)
+    normalize_audio(input_path, output_path)
+
+    # Step 2: reload, denoise, trim
+    y, sr = librosa.load(output_path, sr=TARGET_SR, mono=True)
+    y = reduce_noise(y, sr)
+    y = trim_silence(y, sr)
+
+    sf.write(output_path, y, sr, subtype="PCM_16")
+>>>>>>> a090ded35b0a085b6b5c18aa578a35c9d63d14a3
     return output_path

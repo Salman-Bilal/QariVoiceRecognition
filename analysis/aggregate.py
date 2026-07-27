@@ -7,6 +7,7 @@ from pathlib import Path
 #creating new branch
 #not merging
 #comparing branches
+#anything else
 # Fix path visibility
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 

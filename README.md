@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🎙️ Qari Voice Recognition System
 
 > **AI-Powered Quranic Recitation Analysis & Voice Identification**
@@ -570,3 +571,6 @@ If you use this project in your research, please cite:
 [⬆ Back to Top](#-qari-voice-recognition-system)
 
 </div>
+=======
+# QariVoiceRecognition
+>>>>>>> a090ded35b0a085b6b5c18aa578a35c9d63d14a3

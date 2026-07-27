@@ -333,20 +333,111 @@ def build_all_style_profiles() -> Dict[str, Dict]:
     return profiles
 
 
-def save_style_profiles(profiles: Dict[str, Dict], output_path: Path = STYLE_PROFILES_PATH) -> None:
-    """Serialize style profiles to disk."""
+def compute_inter_qari_stats(profiles: Dict[str, Dict]) -> Dict[str, Dict]:
+    """
+    Compute the mean and standard deviation of each style feature ACROSS all
+    Qari profiles.  These population-level statistics are used at inference
+    time to Z-score-normalise user features so that the full similarity range
+    is always exercised, regardless of how tightly individual feature values
+    cluster.
+
+    Returns a nested dict:
+        {
+          "pitch":  { feature_name: {"mean": float, "std": float}, ... },
+          "rhythm": { ... },
+          "breath": { ... },
+        }
+    """
+    if not profiles:
+        raise ValueError("Cannot compute stats: no profiles provided.")
+
+    groups = ("pitch", "rhythm", "breath")
+    stats: Dict[str, Dict] = {g: {} for g in groups}
+
+    for group in groups:
+        # Collect every feature name from the first valid profile
+        sample_profile = next(iter(profiles.values()))
+        feature_names = list(sample_profile[group].keys())
+
+        for feat in feature_names:
+            values = np.array(
+                [p[group][feat] for p in profiles.values() if feat in p[group]],
+                dtype=float,
+            )
+            feat_mean = float(np.mean(values))
+            feat_std  = float(np.std(values))
+            # Floor std to avoid division-by-zero for degenerate features
+            feat_std  = max(feat_std, 1e-6)
+            stats[group][feat] = {"mean": feat_mean, "std": feat_std}
+
+    return stats
+
+
+def save_style_profiles(
+    profiles: Dict[str, Dict],
+    stats: Dict[str, Dict],
+    output_path: Path = STYLE_PROFILES_PATH,
+) -> None:
+    """
+    Serialize style profiles AND inter-Qari feature statistics to disk.
+
+    The file stores a dict with two keys:
+        "profiles" -> { qari_name: profile_dict }
+        "stats"    -> { group: { feature: {"mean": float, "std": float} } }
+    """
     output_path.parent.mkdir(parents=True, exist_ok=True)
+    bundle = {"profiles": profiles, "stats": stats}
     with open(output_path, "wb") as f:
-        pickle.dump(profiles, f)
-    print(f"\nStyle profiles saved -> {output_path}")
+        pickle.dump(bundle, f)
+    print(f"\nStyle profiles + inter-Qari stats saved -> {output_path}")
 
 
 def load_style_profiles(profiles_path: Path = STYLE_PROFILES_PATH) -> Dict[str, Dict]:
-    """Load pre-built style profiles from disk."""
+    """
+    Load pre-built style profiles from disk.
+
+    Supports both the new bundle format (dict with "profiles" / "stats" keys)
+    and the old flat format (plain dict of qari_name → profile) for backward
+    compatibility.  Always returns just the profiles dict; use
+    load_style_profiles_and_stats() to also get the statistics.
+    """
     if not profiles_path.exists():
         raise FileNotFoundError(
             f"Style profiles not found at {profiles_path}\n"
             "Run: python matching/build_style_profiles.py"
         )
     with open(profiles_path, "rb") as f:
-        return pickle.load(f)
+        data = pickle.load(f)
+
+    # New bundle format
+    if isinstance(data, dict) and "profiles" in data:
+        return data["profiles"]
+
+    # Legacy flat format — return as-is
+    return data
+
+
+def load_style_profiles_and_stats(
+    profiles_path: Path = STYLE_PROFILES_PATH,
+) -> tuple:
+    """
+    Load pre-built style profiles AND inter-Qari feature statistics.
+
+    Returns:
+        (profiles: Dict[str, Dict], stats: Dict[str, Dict])
+
+    stats will be None if the file was saved in the old format (rebuild recommended).
+    """
+    if not profiles_path.exists():
+        raise FileNotFoundError(
+            f"Style profiles not found at {profiles_path}\n"
+            "Run: python matching/build_style_profiles.py"
+        )
+    with open(profiles_path, "rb") as f:
+        data = pickle.load(f)
+
+    if isinstance(data, dict) and "profiles" in data:
+        return data["profiles"], data.get("stats", None)
+
+    # Legacy format — no stats stored
+    return data, None

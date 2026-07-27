@@ -10,7 +10,8 @@ What it does:
   - Scans dataset/processed/normalized/{Qari_Name}/*.wav
   - Extracts pitch, rhythm, and breath style features from every Surah
   - Averages features across all Surahs for each Qari
-  - Saves the profiles to matching/style_profiles.pkl
+  - Computes inter-Qari mean/std for every feature (used for Z-score normalisation)
+  - Saves profiles + statistics bundle to matching/style_profiles.pkl
 
 After running this, the API will use these profiles for all
 /api/identify-qari and /api/compare-all-qaris requests.
@@ -28,6 +29,7 @@ sys.path.insert(0, str(BASE_DIR))
 
 from matching.style_profiles import (
     build_all_style_profiles,
+    compute_inter_qari_stats,
     save_style_profiles,
     NORMALIZED_DIR,
     STYLE_PROFILES_PATH,
@@ -64,6 +66,7 @@ def main():
 
     t_start = time.time()
 
+    # ── Step 1: Build per-Qari style profiles ────────────────────────────────
     try:
         profiles = build_all_style_profiles()
     except Exception as e:
@@ -76,7 +79,26 @@ def main():
         print("\nNo profiles were built. Check audio files and try again.")
         sys.exit(1)
 
-    save_style_profiles(profiles, STYLE_PROFILES_PATH)
+    # ── Step 2: Compute inter-Qari feature statistics ─────────────────────────
+    print("\nComputing inter-Qari feature statistics (mean/std per feature)...")
+    try:
+        stats = compute_inter_qari_stats(profiles)
+    except Exception as e:
+        print(f"\nFailed to compute inter-Qari stats: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+
+    # Print a quick summary of which features have the most inter-Qari spread
+    print("\n  Feature spread across Qaris (std = how distinctive that feature is):")
+    for group in ("pitch", "rhythm", "breath"):
+        print(f"\n  [{group.upper()}]")
+        for feat, s in stats[group].items():
+            bar = "█" * min(int(s["std"] * 20), 30)
+            print(f"    {feat:<25}  mean={s['mean']:+.4f}  std={s['std']:.4f}  {bar}")
+
+    # ── Step 3: Save bundled profiles + stats ────────────────────────────────
+    save_style_profiles(profiles, stats, STYLE_PROFILES_PATH)
 
     elapsed = time.time() - t_start
     mins, secs = divmod(int(elapsed), 60)

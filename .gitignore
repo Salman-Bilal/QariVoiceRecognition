@@ -9,4 +9,8 @@ pretrained_models/
 *.pt
 *.pth
 logs/
+<<<<<<< HEAD
 .DS_Store
+=======
+.DS_Store
+>>>>>>> a090ded35b0a085b6b5c18aa578a35c9d63d14a3

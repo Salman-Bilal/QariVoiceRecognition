@@ -1,3 +1,19 @@
+<<<<<<< HEAD
+import pandas as pd
+
+def create_splits(manifest_df, held_out_val_surah, held_out_test_surah):
+    def assign_split(surah_name):
+        if surah_name == held_out_val_surah:
+            return "val"
+        elif surah_name == held_out_test_surah:
+            return "test"
+        else:
+            return "train"
+
+    manifest_df = manifest_df.copy()
+    manifest_df["split"] = manifest_df["surah_name"].apply(assign_split)
+    return manifest_df
+=======
 # preprocessing/make_splits.py
 import pandas as pd
 import json
@@ -30,3 +46,4 @@ manifest_df = create_splits(manifest_df, HELD_OUT_VAL, HELD_OUT_TEST)
 manifest_df.to_csv("/kaggle/working/splits.csv", index=False)
 
 print(manifest_df.groupby(["split", "qari_id"]).size().unstack(fill_value=0))
+>>>>>>> a090ded35b0a085b6b5c18aa578a35c9d63d14a3

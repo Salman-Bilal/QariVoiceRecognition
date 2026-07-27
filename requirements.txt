@@ -25,4 +25,9 @@ python-multipart==0.0.9
 # Utilities
 tqdm==4.66.4
 matplotlib==3.9.0
+<<<<<<< HEAD
 seaborn==0.13.2
+fastdtw==0.3.4
+=======
+seaborn==0.13.2
+>>>>>>> a090ded35b0a085b6b5c18aa578a35c9d63d14a3

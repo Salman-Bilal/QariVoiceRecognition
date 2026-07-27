@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Qari Voice Recognition System</title>
+    <link rel="stylesheet" href="style.css" />
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <!-- Chart.js for visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ─── HEADER ─── -->
+<header class="header">
+    <div class="header-inner">
+        <div class="logo">
+            <i class="fas fa-microphone-lines"></i>
+            <span>Qari Voice Recognition</span>
+        </div>
+        <nav class="nav-links">
+            <a href="#identify">Identify Qari</a>
+            <a href="#analyze">Analyze Recitation</a>
+            <a href="#compare">Compare All</a>
+            <a href="#about">About</a>
+        </nav>
+    </div>
+</header>
+
+<!-- ─── HERO ─── -->
+<section class="hero">
+    <div class="hero-content">
+        <h1>🎙️ Who Does Your Recitation Sound Like?</h1>
+        <p>
+            Upload or record your Quran recitation. Our AI will tell you which
+            famous Qari your voice most closely resembles and give you detailed
+            feedback on your timing, melody, and breathing.
+        </p>
+        <div class="hero-badges">
+            <span class="badge"><i class="fas fa-brain"></i> AI-Powered</span>
+            <span class="badge"><i class="fas fa-users"></i> 12 Famous Qaris</span>
+            <span class="badge"><i class="fas fa-bullseye"></i> 99.7% Accuracy</span>
+        </div>
+        <a href="#identify" class="btn-primary">
+            <i class="fas fa-play"></i> Start Now
+        </a>
+    </div>
+</section>
+
+<!-- ─── MAIN CONTENT ─── -->
+<main class="container">
+
+    <!-- ─── TAB NAVIGATION ─── -->
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="identify">
+            <i class="fas fa-fingerprint"></i> Identify Qari
+        </button>
+        <button class="tab-btn" data-tab="analyze">
+            <i class="fas fa-chart-line"></i> Analyze Recitation
+        </button>
+        <button class="tab-btn" data-tab="compare">
+            <i class="fas fa-balance-scale"></i> Compare All Qaris
+        </button>
+    </div>
+
+    <!-- ════════════════════════════════════════ -->
+    <!--  TAB 1 — IDENTIFY QARI                   -->
+    <!-- ════════════════════════════════════════ -->
+    <section id="identify" class="tab-content active">
+        <div class="card">
+            <h2><i class="fas fa-fingerprint"></i> Identify Which Qari You Sound Like</h2>
+            <p class="card-subtitle">
+                Upload your Quran recitation audio and our AI will match your voice
+                to the most similar Qari.
+            </p>
+
+            <!-- Upload Area -->
+            <div class="upload-area" id="identify-upload-area">
+                <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                <p class="upload-title">Drag & drop your audio file here</p>
+                <p class="upload-sub">or</p>
+                <label class="btn-secondary" for="identify-file-input">
+                    <i class="fas fa-folder-open"></i> Browse Files
+                </label>
+                <input type="file" id="identify-file-input" accept=".wav,.mp3,.m4a,.flac" hidden />
+                <p class="upload-hint">Supported: WAV, MP3, M4A, FLAC · Max 50 MB</p>
+            </div>
+
+            <!-- OR Record Live -->
+            <div class="divider"><span>or record directly</span></div>
+
+            <div class="record-section">
+                <button class="btn-record" id="identify-record-btn">
+                    <i class="fas fa-microphone"></i> Start Recording
+                </button>
+                <span class="record-timer" id="identify-timer">00:00</span>
+                <div class="audio-preview" id="identify-audio-preview" style="display:none">
+                    <audio controls id="identify-audio-player"></audio>
+                </div>
+            </div>
+
+            <!-- File Info -->
+            <div class="file-info" id="identify-file-info" style="display:none">
+                <i class="fas fa-file-audio"></i>
+                <span id="identify-file-name"></span>
+                <button class="btn-remove" id="identify-remove-file">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Top K slider -->
+            <div class="options-row">
+                <label for="top-k-slider">Show top <strong id="top-k-value">5</strong> matches</label>
+                <input type="range" id="top-k-slider" min="1" max="12" value="5" />
+            </div>
+
+            <!-- Submit -->
+            <button class="btn-primary full-width" id="identify-submit-btn" disabled>
+                <i class="fas fa-search"></i> Identify Qari
+            </button>
+
+            <!-- Loading Indicator -->
+            <div class="loading" id="identify-loading" style="display:none">
+                <div class="spinner"></div>
+                <p>Analyzing your voice… <span id="identify-loading-step">Extracting features</span></p>
+            </div>
+
+            <!-- Results -->
+            <div class="results" id="identify-results" style="display:none">
+                <div class="result-hero">
+                    <div class="result-icon"><i class="fas fa-trophy"></i></div>
+                    <div class="result-text">
+                        <h3 id="result-top-qari"></h3>
+                        <p id="result-top-similarity" class="similarity-badge"></p>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="identify-chart"></canvas>
+                </div>
+                <div class="matches-list" id="matches-list"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════ -->
+    <!--  TAB 2 — ANALYZE RECITATION              -->
+    <!-- ════════════════════════════════════════ -->
+    <section id="analyze" class="tab-content">
+        <div class="card">
+            <h2><i class="fas fa-chart-line"></i> Analyze Your Recitation Quality</h2>
+            <p class="card-subtitle">
+                Compare your recitation timing, melody, and breathing against a
+                professional Qari and receive a detailed score.
+            </p>
+
+            <!-- Upload Area -->
+            <div class="upload-area" id="analyze-upload-area">
+                <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                <p class="upload-title">Drag & drop your recitation audio</p>
+                <label class="btn-secondary" for="analyze-file-input">
+                    <i class="fas fa-folder-open"></i> Browse Files
+                </label>
+                <input type="file" id="analyze-file-input" accept=".wav,.mp3,.m4a,.flac" hidden />
+                <p class="upload-hint">Supported: WAV, MP3, M4A, FLAC · Max 50 MB</p>
+            </div>
+
+            <!-- File Info -->
+            <div class="file-info" id="analyze-file-info" style="display:none">
+                <i class="fas fa-file-audio"></i>
+                <span id="analyze-file-name"></span>
+                <button class="btn-remove" id="analyze-remove-file">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Options -->
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="surah-select">Select Surah</label>
+                    <select id="surah-select" class="form-control">
+                        <option value="">Loading surahs…</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="qari-select">Reference Qari</label>
+                    <select id="qari-select" class="form-control">
+                        <option value="">Loading Qaris…</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <button class="btn-primary full-width" id="analyze-submit-btn" disabled>
+                <i class="fas fa-microscope"></i> Analyze Recitation
+            </button>
+
+            <!-- Loading -->
+            <div class="loading" id="analyze-loading" style="display:none">
+                <div class="spinner"></div>
+                <p>Computing analysis… <span id="analyze-loading-step">Checking timing alignment</span></p>
+            </div>
+
+            <!-- Results -->
+            <div class="results" id="analyze-results" style="display:none">
+                <!-- Overall Score -->
+                <div class="overall-score-card">
+                    <div class="score-circle-wrapper">
+                        <svg viewBox="0 0 120 120" class="score-circle">
+                            <circle cx="60" cy="60" r="52" class="circle-bg" />
+                            <circle cx="60" cy="60" r="52" class="circle-fill" id="score-circle-fill" />
+                        </svg>
+                        <div class="score-center">
+                            <span id="overall-score-value">0</span>
+                            <small>/100</small>
+                        </div>
+                    </div>
+                    <div class="score-meta">
+                        <h3 id="overall-interpretation"></h3>
+                        <p id="analysis-reference-info"></p>
+                    </div>
+                </div>
+
+                <!-- Detail Scores -->
+                <div class="score-breakdown">
+                    <div class="score-card" id="timing-card">
+                        <div class="score-icon timing"><i class="fas fa-clock"></i></div>
+                        <div class="score-detail">
+                            <h4>Timing & Rhythm</h4>
+                            <div class="score-bar-wrap">
+                                <div class="score-bar" id="timing-bar"></div>
+                            </div>
+                            <span class="score-num" id="timing-score"></span>
+                        </div>
+                        <p class="score-interp" id="timing-interpretation"></p>
+                    </div>
+
+                    <div class="score-card" id="melody-card">
+                        <div class="score-icon melody"><i class="fas fa-music"></i></div>
+                        <div class="score-detail">
+                            <h4>Melody & Pitch</h4>
+                            <div class="score-bar-wrap">
+                                <div class="score-bar" id="melody-bar"></div>
+                            </div>
+                            <span class="score-num" id="melody-score"></span>
+                        </div>
+                        <p class="score-interp" id="melody-interpretation"></p>
+                    </div>
+
+                    <div class="score-card" id="breath-card">
+                        <div class="score-icon breath"><i class="fas fa-wind"></i></div>
+                        <div class="score-detail">
+                            <h4>Breath & Phrasing</h4>
+                            <div class="score-bar-wrap">
+                                <div class="score-bar" id="breath-bar"></div>
+                            </div>
+                            <span class="score-num" id="breath-score"></span>
+                        </div>
+                        <p class="score-interp" id="breath-interpretation"></p>
+                    </div>
+                </div>
+
+                <!-- Breath Details -->
+                <div class="details-grid" id="breath-details"></div>
+
+                <!-- Radar Chart -->
+                <div class="chart-container">
+                    <canvas id="analyze-radar-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════ -->
+    <!--  TAB 3 — COMPARE ALL QARIS               -->
+    <!-- ════════════════════════════════════════ -->
+    <section id="compare" class="tab-content">
+        <div class="card">
+            <h2><i class="fas fa-balance-scale"></i> Compare Against All Qaris</h2>
+            <p class="card-subtitle">
+                See a full breakdown of how similar your voice is to every Qari
+                in our database.
+            </p>
+
+            <!-- Upload Area -->
+            <div class="upload-area" id="compare-upload-area">
+                <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                <p class="upload-title">Drag & drop your audio file</p>
+                <label class="btn-secondary" for="compare-file-input">
+                    <i class="fas fa-folder-open"></i> Browse Files
+                </label>
+                <input type="file" id="compare-file-input" accept=".wav,.mp3,.m4a,.flac" hidden />
+                <p class="upload-hint">Supported: WAV, MP3, M4A, FLAC · Max 50 MB</p>
+            </div>
+
+            <!-- File Info -->
+            <div class="file-info" id="compare-file-info" style="display:none">
+                <i class="fas fa-file-audio"></i>
+                <span id="compare-file-name"></span>
+                <button class="btn-remove" id="compare-remove-file">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Submit -->
+            <button class="btn-primary full-width" id="compare-submit-btn" disabled>
+                <i class="fas fa-project-diagram"></i> Compare Against All Qaris
+            </button>
+
+            <!-- Loading -->
+            <div class="loading" id="compare-loading" style="display:none">
+                <div class="spinner"></div>
+                <p>Comparing against all 12 Qaris…</p>
+            </div>
+
+            <!-- Results -->
+            <div class="results" id="compare-results" style="display:none">
+                <!-- Stats Row -->
+                <div class="stats-row" id="compare-stats-row"></div>
+
+                <!-- Horizontal Bar Chart -->
+                <div class="chart-container" style="height:420px">
+                    <canvas id="compare-bar-chart"></canvas>
+                </div>
+
+                <!-- Full Table -->
+                <div class="table-wrapper">
+                    <table class="comparison-table" id="compare-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Qari</th>
+                                <th>Similarity</th>
+                                <th>Match Level</th>
+                            </tr>
+                        </thead>
+                        <tbody id="compare-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- ─── ABOUT SECTION ─── -->
+<section id="about" class="about-section">
+    <div class="container">
+        <h2>About This Project</h2>
+        <div class="about-grid">
+            <div class="about-card">
+                <i class="fas fa-brain"></i>
+                <h3>How It Works</h3>
+                <p>
+                    Uses the ECAPA-TDNN deep learning model to extract a 192-dimensional
+                    voice fingerprint from your recitation, then compares it against
+                    reference fingerprints of 12 professional Qaris.
+                </p>
+            </div>
+            <div class="about-card">
+                <i class="fas fa-database"></i>
+                <h3>Training Data</h3>
+                <p>
+                    Trained on recordings from 12 world-famous Qaris across 8 Surahs,
+                    producing 2,939 audio clips. Achieved 99.83% test accuracy.
+                </p>
+            </div>
+            <div class="about-card">
+                <i class="fas fa-chart-pie"></i>
+                <h3>Analysis Metrics</h3>
+                <p>
+                    Evaluates your recitation on three dimensions: Timing/Rhythm
+                    (DTW alignment), Melody/Pitch (pitch contour), and
+                    Breath Phrasing (pause patterns).
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer class="footer">
+    <p>Qari Voice Recognition System &copy; 2026 · Final Year Project</p>
+</footer>
+
+<!-- ─── TOAST NOTIFICATION ─── -->
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

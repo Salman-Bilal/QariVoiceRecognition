@@ -1,0 +1,26 @@
+{
+  "surah": "55_Surah_Rehman",
+  "reference_qari": "Abdul Basit Abdul Samad",
+  "overall_score": 52.2,
+  "overall_interpretation": "Noticeable differences",
+  "timing": {
+    "timing_score": 81.79,
+    "dtw_distance": 2925073.14,
+    "path_deviation": 0.0546,
+    "interpretation": "Good, minor differences"
+  },
+  "melody": {
+    "melody_score": 74.8,
+    "normalized_dtw_distance": 0.756,
+    "interpretation": "Good, minor differences"
+  },
+  "breath": {
+    "breath_score": 0.0,
+    "user_pause_count": 0,
+    "reference_pause_count": 80,
+    "user_avg_pause_duration": 0.0,
+    "reference_avg_pause_duration": 1.14,
+    "interpretation": "Significant differences \u2014 review recommended"
+  },
+  "note": "Pronunciation/tajweed accuracy scoring is deferred by design \u2014 this report covers acoustic rhythm, melody, and breath consistency metrics only."
+}

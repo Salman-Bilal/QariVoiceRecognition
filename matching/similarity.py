@@ -45,14 +45,23 @@ def _load_reference_embeddings():
     return _reference_embeddings
 
 def extract_user_embedding(audio_path):
+    """
+    Extract a single L2-normalised ECAPA-TDNN embedding for the given audio file.
+
+    For clips shorter than 4 seconds the full signal is used as-is.
+    For longer clips (e.g. 2–3 Ayahs = 20–60 s) we slide a 4-second window
+    with 2-second overlap (matching how reference centroids were built), extract
+    one embedding per window, average them, then re-normalise.  This makes the
+    user embedding directly comparable to the reference centroids.
+    """
     classifier = _load_classifier()
-    
+
     # Resolve relative paths securely if provided
     abs_audio_path = BASE_DIR / audio_path if not os.path.isabs(audio_path) else Path(audio_path)
-    
+
     if not abs_audio_path.exists():
         raise FileNotFoundError(f"❌ Cannot find audio file at: {abs_audio_path}")
-        
+
     signal, fs = torchaudio.load(str(abs_audio_path))
 
     # Convert stereo to mono
@@ -62,20 +71,48 @@ def extract_user_embedding(audio_path):
     # Resample to 16kHz
     if fs != 16000:
         signal = torchaudio.functional.resample(signal, fs, 16000)
-        
-    # 💡 FIX 1: Peak volume normalization for consistency
+
+    # Peak volume normalisation for consistency
     if signal.abs().max() > 0:
         signal = signal / signal.abs().max()
-        
-    with torch.no_grad():
-        emb = classifier.encode_batch(signal).squeeze().cpu().numpy()
-        
-    # 💡 FIX 2: Safe L2 normalization
-    norm = np.linalg.norm(emb)
+
+    # --- Window-and-average to match reference centroid construction ---
+    WINDOW_SAMPLES = 4 * 16000   # 4-second windows (same as training segmentation)
+    HOP_SAMPLES    = 2 * 16000   # 2-second hop (50% overlap)
+    total_samples  = signal.shape[1]
+
+    window_embeddings = []
+
+    if total_samples < WINDOW_SAMPLES:
+        # Short clip (< 4 s) — use the full signal directly
+        with torch.no_grad():
+            emb = classifier.encode_batch(signal).squeeze().cpu().numpy()
+        window_embeddings.append(emb)
+    else:
+        # Slide windows across the full clip
+        start = 0
+        while start + WINDOW_SAMPLES <= total_samples:
+            chunk = signal[:, start : start + WINDOW_SAMPLES]
+            with torch.no_grad():
+                emb = classifier.encode_batch(chunk).squeeze().cpu().numpy()
+            window_embeddings.append(emb)
+            start += HOP_SAMPLES
+
+        # If there is a leftover tail >= 1 second, include it too
+        remainder = total_samples - (start if start + WINDOW_SAMPLES > total_samples else start)
+        if remainder >= 16000:
+            tail = signal[:, -WINDOW_SAMPLES:]   # use the last 4 s to avoid padding issues
+            with torch.no_grad():
+                emb = classifier.encode_batch(tail).squeeze().cpu().numpy()
+            window_embeddings.append(emb)
+
+    # Average all window embeddings then re-normalise to unit length
+    avg_emb = np.mean(window_embeddings, axis=0)
+    norm = np.linalg.norm(avg_emb)
     if norm > 0:
-        emb = emb / norm
-        
-    return emb
+        avg_emb = avg_emb / norm
+
+    return avg_emb
 
 def cosine_similarity(a, b):
     return float(np.dot(a, b))  # L2-normalized vectors

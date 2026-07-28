@@ -1,65 +1,80 @@
 """
-FastAPI Backend for Qari Voice Recognition System
-Provides endpoints for audio upload, analysis, and Qari comparison
+Qari Voice Recognition — FastAPI Microservice
+==============================================
+Pure backend service. No frontend. No static files.
 
-Matching engine: style-based (pitch contour + rhythm + breath pattern)
-  /api/identify-qari      — ranks all Qaris by recitation style similarity
-  /api/compare-all-qaris  — full breakdown of style similarity vs all Qaris
-  /api/analyze-recitation — detailed timing/melody/breath score vs one Qari (unchanged)
+Single feature: identify which of the 12 Qaris an uploaded recitation
+most closely resembles, using ECAPA-TDNN speaker embeddings.
+
+Endpoints
+---------
+POST /identify-qari   — upload audio, receive top-5 Qari matches (primary)
+GET  /health          — liveness + readiness check
+GET  /                — service info (Swagger link included)
+
+Swagger UI : http://localhost:8000/docs
+ReDoc      : http://localhost:8000/redoc
 """
 
 import os
 import sys
 import logging
-from pathlib import Path
-from typing import Optional, List, Dict
 import tempfile
-import shutil
+from pathlib import Path
+from typing import List
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form
+import numpy as np
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
-import numpy as np
 
-# Add project root to path
+# ---------------------------------------------------------------------------
+# Project root on sys.path so all internal imports resolve
+# ---------------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE_DIR))
 
-# Import audio validator
-from api.audio_validator import validate_audio_file as external_validate_audio, ValidationResult
+from api.audio_validator import validate_audio_file, ValidationResult
+from matching.similarity import (
+    get_top5_similar,
+    _load_classifier,
+    _load_reference_embeddings,
+)
 
-# ── Style-based matching engine (replaces ECAPA for identification) ──────────
-from matching.style_similarity import compare_style_to_all_qaris, _get_profiles_and_stats
-from matching.style_profiles import load_style_profiles, STYLE_PROFILES_PATH
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+(BASE_DIR / "logs").mkdir(exist_ok=True)
 
-# ── Recitation quality analysis (unchanged — used by /api/analyze-recitation) ─
-from analysis.aggregate import generate_recitation_report
-from analysis.config import REFERENCE_QARI
-
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
     handlers=[
-        logging.FileHandler(BASE_DIR / 'logs' / 'api.log'),
-        logging.StreamHandler()
-    ]
+        logging.FileHandler(BASE_DIR / "logs" / "api.log"),
+        logging.StreamHandler(),
+    ],
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("qari_api")
 
-# Initialize FastAPI app
+# ---------------------------------------------------------------------------
+# App
+# ---------------------------------------------------------------------------
 app = FastAPI(
     title="Qari Voice Recognition API",
     description=(
-        "AI-powered Quranic recitation analysis and Qari identification system.\n\n"
-        "Matching is based on recitation STYLE (pitch contour, rhythm, breath pattern), "
-        "not speaker identity."
+        "Upload a Quranic recitation audio clip and receive the **top-5 Qaris** "
+        "whose voice most closely matches yours.\n\n"
+        "Matching is performed via **ECAPA-TDNN** speaker embeddings "
+        "(192-dimensional cosine similarity against pre-built Qari centroids).\n\n"
+        "Accuracy: **99.73 % top-1** on the 12-Qari benchmark dataset.\n\n"
+        "**Recommended input:** 10 s or more of clean recitation (2-3 Ayahs is enough)."
     ),
-    version="2.0.0"
+    version="4.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
-# Enable CORS for frontend access
+# Allow all origins so any external frontend can call this service
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -68,442 +83,260 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files (frontend)
-frontend_dir = BASE_DIR / "frontend"
-if frontend_dir.exists():
-    app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="static")
 
-
+# ---------------------------------------------------------------------------
+# Startup — pre-load model so first request is not slow
+# ---------------------------------------------------------------------------
 @app.on_event("startup")
 async def startup_event():
-    """Load style profiles on startup."""
     try:
-        logger.info("Loading Qari style profiles...")
-        profiles, _ = _get_profiles_and_stats()
-        logger.info(f"✅ Loaded style profiles for {len(profiles)} Qaris: {sorted(profiles.keys())}")
+        logger.info("Warming up ECAPA-TDNN model...")
+        _load_classifier()
+        refs = _load_reference_embeddings()
+        logger.info(
+            f"Ready. {len(refs)} Qari centroids loaded: {sorted(refs.keys())}"
+        )
     except FileNotFoundError:
         logger.warning(
-            "⚠️  Style profiles not found. "
-            "Run: python matching/build_style_profiles.py — then restart the server."
+            "Reference embeddings not found. "
+            "Run: python matching/build_reference_embeddings.py  then restart."
         )
-    except Exception as e:
-        logger.error(f"Failed to load style profiles: {e}")
+    except Exception as exc:
+        logger.error(f"Startup error: {exc}")
 
 
-def validate_upload_metadata(file: UploadFile):
-    """Basic validation for uploaded file metadata (format & size)."""
-    allowed_extensions = ['.wav', '.mp3', '.m4a', '.flac']
-    filename = getattr(file, 'filename', None) or str(file)
-    file_ext = Path(filename).suffix.lower()
-
-    if file_ext not in allowed_extensions:
-        return False, f"Invalid file format. Allowed: {', '.join(allowed_extensions)}"
-
-    if hasattr(file, 'size') and file.size and file.size > 50 * 1024 * 1024:
-        return False, "File too large. Maximum size: 50MB"
-
-    return True, None
+# ---------------------------------------------------------------------------
+# Helper
+# ---------------------------------------------------------------------------
+ALLOWED_EXTENSIONS = {".wav", ".mp3", ".m4a", ".flac"}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Info endpoints
-# ─────────────────────────────────────────────────────────────────────────────
+def _check_extension(filename: str) -> None:
+    ext = Path(filename or "upload.wav").suffix.lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported format '{ext}'. Accepted: wav, mp3, m4a, flac.",
+        )
 
-@app.get("/")
+
+def _confidence(pct: float) -> str:
+    if pct >= 65:
+        return "high"
+    if pct >= 35:
+        return "medium"
+    return "low"
+
+
+# ---------------------------------------------------------------------------
+# GET /
+# ---------------------------------------------------------------------------
+@app.get("/", tags=["Info"], summary="Service info")
 async def root():
+    """Returns service name, version and the Swagger UI link."""
     return {
-        "service": "Qari Voice Recognition API",
-        "version": "2.0.0",
-        "matching_engine": "Style-based (pitch + rhythm + breath)",
-        "status": "running",
-        "endpoints": {
-            "health": "/health",
-            "identify_qari": "/api/identify-qari",
-            "analyze_recitation": "/api/analyze-recitation",
-            "compare_all_qaris": "/api/compare-all-qaris",
-            "list_qaris": "/api/list-qaris",
-            "available_surahs": "/api/available-surahs",
-        }
+        "service":  "Qari Voice Recognition API",
+        "version":  "4.0.0",
+        "engine":   "ECAPA-TDNN speaker embeddings",
+        "status":   "running",
+        "swagger":  "/docs",
+        "endpoint": "POST /identify-qari",
     }
 
 
-@app.get("/health")
-async def health_check():
+# ---------------------------------------------------------------------------
+# GET /health
+# ---------------------------------------------------------------------------
+@app.get("/health", tags=["Info"], summary="Health / readiness check")
+async def health():
+    """
+    Returns **healthy** when the ECAPA model and reference embeddings are loaded.
+    Returns **degraded** when they are missing (service started before data was built).
+    """
     try:
-        profiles, _ = _get_profiles_and_stats()
+        refs = _load_reference_embeddings()
         return {
-            "status": "healthy",
-            "style_profiles_loaded": True,
-            "num_qaris": len(profiles),
-            "qaris": sorted(profiles.keys()),
+            "status":     "healthy",
+            "engine":     "ECAPA-TDNN",
+            "num_qaris":  len(refs),
+            "qaris":      sorted(refs.keys()),
         }
     except FileNotFoundError:
-        return {
-            "status": "degraded",
-            "style_profiles_loaded": False,
-            "message": "Run python matching/build_style_profiles.py then restart.",
-        }
-    except Exception as e:
-        logger.error(f"Health check failed: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status":  "degraded",
+                "reason":  "Reference embeddings not found.",
+                "fix":     "Run: python matching/build_reference_embeddings.py  then restart.",
+            },
+        )
+    except Exception as exc:
+        logger.error(f"Health check error: {exc}")
         raise HTTPException(status_code=503, detail="Service unavailable")
 
 
-@app.get("/api/list-qaris")
-async def list_qaris():
-    """Get list of available Qaris."""
-    try:
-        profiles, _ = _get_profiles_and_stats()
-        qaris = sorted(profiles.keys())
-        return {
-            "success": True,
-            "qaris": qaris,
-            "count": len(qaris),
-            "default_reference": REFERENCE_QARI,
-        }
-    except Exception as e:
-        logger.error(f"Failed to list Qaris: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/api/available-surahs")
-async def available_surahs():
-    """Get list of available Surahs for analysis."""
-    normalized_dir = BASE_DIR / "dataset" / "processed" / "normalized"
-
-    if not normalized_dir.exists():
-        return {"success": False, "error": "Reference dataset not found"}
-
-    qari_dirs = [d for d in normalized_dir.iterdir() if d.is_dir()]
-    if not qari_dirs:
-        return {"success": False, "error": "No Qari directories found"}
-
-    first_qari_dir = qari_dirs[0]
-    surah_files = [f.stem for f in first_qari_dir.glob("*.wav")]
-
-    return {
-        "success": True,
-        "surahs": sorted(surah_files),
-        "count": len(surah_files)
-    }
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# /api/identify-qari — style-based ranking
-# ─────────────────────────────────────────────────────────────────────────────
-
-@app.post("/api/identify-qari")
+# ---------------------------------------------------------------------------
+# POST /identify-qari  — the only feature endpoint
+# ---------------------------------------------------------------------------
+@app.post(
+    "/identify-qari",
+    tags=["Identification"],
+    summary="Identify top-5 matching Qaris from a recitation audio clip",
+    response_description="Top-5 Qari matches with similarity scores",
+)
 async def identify_qari(
-    audio_file: UploadFile = File(...),
-    top_k: int = Form(5)
+    audio_file: UploadFile = File(
+        ...,
+        description=(
+            "Audio file of the recitation. "
+            "Accepted formats: WAV, MP3, M4A, FLAC. Max size: 50 MB. "
+            "Recommended: 10 s or more of clean recitation."
+        ),
+    ),
 ):
     """
-    Identify which Qari's recitation style the uploaded audio most resembles.
+    Upload a Quranic recitation clip and get the **top-5 Qaris** whose voice
+    most closely matches the uploaded audio.
 
-    Scores are based on three style dimensions:
-      - Pitch similarity  (40%) — melody contour, vocal range, voiced fraction
-      - Rhythm similarity (35%) — tempo, syllable rate, rhythmic regularity
-      - Breath similarity (25%) — phrasing density, pause pattern
+    ### How it works
+    1. Audio is resampled to 16 kHz mono and peak-normalised.
+    2. A 4-second sliding window (2-second hop) is applied across the clip.
+    3. Each window is passed through **ECAPA-TDNN** → 192-dim embedding.
+    4. All window embeddings are averaged and L2-normalised.
+    5. Cosine similarity is computed against 12 pre-built Qari centroids.
+    6. Results are mapped to percentages and the top-5 are returned.
 
-    Returns ranked list of similar Qaris with per-dimension breakdown.
+    ### Response fields
+    | Field | Type | Description |
+    |---|---|---|
+    | `success` | bool | Always `true` on a 200 response |
+    | `top_match` | object | The single best-matching Qari |
+    | `top_5` | array | Ranked list of the 5 best matches |
+    | `interpretation` | string | Human-readable summary sentence |
+
+    ### Each match object
+    | Field | Type | Description |
+    |---|---|---|
+    | `rank` | int | 1 = best match |
+    | `qari` | string | Qari name |
+    | `similarity_percent` | float | 0–100 % similarity score |
+    | `raw_cosine_score` | float | Raw cosine similarity (0–1) |
+    | `confidence` | string | `"high"` / `"medium"` / `"low"` |
     """
     temp_path = None
-
     try:
-        # 1. Validate file metadata
-        is_valid, error_msg = validate_upload_metadata(audio_file)
-        if not is_valid:
-            raise HTTPException(status_code=400, detail=error_msg)
+        # 1. Extension check
+        _check_extension(audio_file.filename or "")
 
         # 2. Save to temp file
-        suffix = Path(audio_file.filename or "temp.wav").suffix
+        suffix = Path(audio_file.filename or "upload.wav").suffix.lower()
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
             temp_path = tmp.name
-            content = await audio_file.read()
-            tmp.write(content)
+            tmp.write(await audio_file.read())
 
-        # 3. Validate audio content
-        validation = external_validate_audio(temp_path)
+        # 3. Audio content validation (duration, silence, sample rate)
+        validation = validate_audio_file(temp_path)
         if not validation.is_valid:
             raise HTTPException(
                 status_code=400,
-                detail=f"Audio validation failed: {'; '.join(validation.errors)}"
+                detail={
+                    "message": "Audio validation failed.",
+                    "errors":  validation.errors,
+                },
             )
-        for w in validation.warnings:
-            logger.warning(f"Audio warning: {w}")
-
-        logger.info(f"[identify-qari] {audio_file.filename} | {validation.audio_info}")
-
-        # 4. Style-based comparison
-        all_results = compare_style_to_all_qaris(temp_path)
-
-        # 5. Build response
-        all_matches = [
-            {
-                "qari":          r["qari"],
-                "similarity":    r["overall_score"],
-                "pitch_score":   r["pitch_score"],
-                "rhythm_score":  r["rhythm_score"],
-                "breath_score":  r["breath_score"],
-                "match_level":   r["match_level"],
-                "confidence": (
-                    "high"   if r["overall_score"] > 65 else
-                    "medium" if r["overall_score"] > 40 else
-                    "low"
-                ),
-            }
-            for r in all_results
-        ]
-
-        top_match = all_matches[0]
-        top_k_matches = all_matches[:top_k]
-
-        return {
-            "success": True,
-            "filename": audio_file.filename,
-            "audio_info": validation.audio_info,
-            "warnings": validation.warnings,
-            "matching_engine": "style-based (pitch + rhythm + breath)",
-            "top_match": top_match,
-            "top_k_matches": top_k_matches,
-            "all_matches": all_matches,
-            "interpretation": (
-                f"Your recitation style most closely resembles {top_match['qari']} "
-                f"({top_match['similarity']}% overall style match)"
-            ),
-            "score_breakdown": {
-                "pitch_weight":  "40% — melody contour and vocal range",
-                "rhythm_weight": "35% — tempo and syllable timing",
-                "breath_weight": "25% — phrasing and pause pattern",
-            }
-        }
-
-    except HTTPException:
-        raise
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
-    except FileNotFoundError as e:
-        logger.error(f"Style profiles missing: {e}")
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                "Style profiles not built yet. "
-                "Run: python matching/build_style_profiles.py — then restart the server."
-            )
-        )
-    except Exception as e:
-        logger.error(f"Error in identify_qari: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
-
-    finally:
-        if temp_path and os.path.exists(temp_path):
-            os.unlink(temp_path)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# /api/analyze-recitation — detailed quality analysis (unchanged)
-# ─────────────────────────────────────────────────────────────────────────────
-
-@app.post("/api/analyze-recitation")
-async def analyze_recitation(
-    audio_file: UploadFile = File(...),
-    surah_name: str = Form(...),
-    reference_qari: Optional[str] = Form(None)
-):
-    """
-    Analyze recitation quality against a specific reference Qari for a given Surah.
-    Returns timing, melody, and breath scores with detailed feedback.
-
-    This endpoint is for "how well did I recite THIS surah like THIS Qari?"
-    For "which Qari do I sound most like overall?" use /api/identify-qari.
-    """
-    temp_path = None
-
-    try:
-        is_valid, error_msg = validate_upload_metadata(audio_file)
-        if not is_valid:
-            raise HTTPException(status_code=400, detail=error_msg)
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as tmp:
-            temp_path = tmp.name
-            content = await audio_file.read()
-            tmp.write(content)
-
-        validation = external_validate_audio(temp_path)
-        if not validation.is_valid:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Audio validation failed: {'; '.join(validation.errors)}"
-            )
-        for w in validation.warnings:
-            logger.warning(f"Audio warning: {w}")
 
         logger.info(
-            f"[analyze-recitation] {surah_name} vs "
-            f"{reference_qari or REFERENCE_QARI}"
+            f"[identify-qari] file={audio_file.filename}  "
+            f"duration={validation.audio_info.get('duration_sec')}s  "
+            f"sr={validation.audio_info.get('sample_rate')}Hz"
         )
 
-        report = generate_recitation_report(
-            temp_path,
-            surah_name,
-            reference_qari=reference_qari
-        )
+        # 4. ECAPA-TDNN: rank all 12 Qaris, keep top 5
+        ranked = get_top5_similar(temp_path, top_n=5)
 
-        return {
-            "success": True,
-            "filename": audio_file.filename,
-            "audio_info": validation.audio_info,
-            "warnings": validation.warnings,
-            "report": report
-        }
-
-    except FileNotFoundError as e:
-        logger.error(f"Reference file not found: {e}")
-        raise HTTPException(
-            status_code=404,
-            detail=f"Reference audio not found for '{surah_name}'. Check surah name format."
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error in analyze_recitation: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
-
-    finally:
-        if temp_path and os.path.exists(temp_path):
-            os.unlink(temp_path)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# /api/compare-all-qaris — full style comparison
-# ─────────────────────────────────────────────────────────────────────────────
-
-@app.post("/api/compare-all-qaris")
-async def compare_all_qaris(audio_file: UploadFile = File(...)):
-    """
-    Compare user's recitation style against all available Qaris.
-
-    Returns a comprehensive breakdown showing:
-      - Overall style similarity % for each Qari
-      - Individual pitch, rhythm, and breath scores
-      - Match level label (Excellent / Good / Moderate / Weak)
-      - Style description explaining which dimension was closest
-    """
-    temp_path = None
-
-    try:
-        is_valid, error_msg = validate_upload_metadata(audio_file)
-        if not is_valid:
-            raise HTTPException(status_code=400, detail=error_msg)
-
-        suffix = Path(audio_file.filename or "temp.wav").suffix
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-            temp_path = tmp.name
-            content = await audio_file.read()
-            tmp.write(content)
-
-        validation = external_validate_audio(temp_path)
-        if not validation.is_valid:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Audio validation failed: {'; '.join(validation.errors)}"
-            )
-        for w in validation.warnings:
-            logger.warning(f"Audio warning: {w}")
-
-        logger.info(f"[compare-all-qaris] {audio_file.filename}")
-
-        # Full style comparison
-        all_results = compare_style_to_all_qaris(temp_path)
-
-        comparisons = [
+        # 5. Build clean response
+        top_5 = [
             {
-                "qari":              r["qari"],
-                "similarity_percent": r["overall_score"],
-                "pitch_score":       r["pitch_score"],
-                "rhythm_score":      r["rhythm_score"],
-                "breath_score":      r["breath_score"],
-                "match_level":       r["match_level"],
-                "style_description": r["style_description"],
+                "rank":               i + 1,
+                "qari":               r["qari_id"],
+                "similarity_percent": r["similarity_percent"],
+                "raw_cosine_score":   r["similarity_score"],
+                "confidence":         _confidence(r["similarity_percent"]),
             }
-            for r in all_results
+            for i, r in enumerate(ranked)
         ]
 
-        scores = [c["similarity_percent"] for c in comparisons]
+        best = top_5[0]
 
         return {
             "success": True,
-            "filename": audio_file.filename,
-            "audio_info": validation.audio_info,
-            "warnings": validation.warnings,
-            "matching_engine": "style-based (pitch + rhythm + breath)",
-            "total_qaris_compared": len(comparisons),
-            "best_match": comparisons[0],
-            "all_comparisons": comparisons,
-            "statistics": {
-                "highest_similarity": round(float(max(scores)), 2),
-                "lowest_similarity":  round(float(min(scores)), 2),
-                "average_similarity": round(float(np.mean(scores)), 2),
-                "median_similarity":  round(float(np.median(scores)), 2),
+            "top_match": {
+                "qari":               best["qari"],
+                "similarity_percent": best["similarity_percent"],
+                "confidence":         best["confidence"],
             },
-            "score_breakdown": {
-                "pitch_weight":  "40% — melody contour and vocal range",
-                "rhythm_weight": "35% — tempo and syllable timing",
-                "breath_weight": "25% — phrasing and pause pattern",
-            }
+            "top_5": top_5,
+            "interpretation": (
+                f"Your recitation most closely resembles {best['qari']} "
+                f"({best['similarity_percent']}% similarity, "
+                f"{best['confidence']} confidence)."
+            ),
+            "audio_info": {
+                "filename":     audio_file.filename,
+                "duration_sec": validation.audio_info.get("duration_sec"),
+                "sample_rate":  validation.audio_info.get("sample_rate"),
+                "file_size_mb": validation.audio_info.get("file_size_mb"),
+            },
+            "warnings": validation.warnings,
         }
 
     except HTTPException:
         raise
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
-    except FileNotFoundError as e:
-        logger.error(f"Style profiles missing: {e}")
+    except FileNotFoundError:
         raise HTTPException(
             status_code=503,
             detail=(
-                "Style profiles not built yet. "
-                "Run: python matching/build_style_profiles.py — then restart the server."
-            )
+                "Reference embeddings not built. "
+                "Run: python matching/build_reference_embeddings.py  then restart."
+            ),
         )
-    except Exception as e:
-        logger.error(f"Error in compare_all_qaris: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")
-
+    except Exception as exc:
+        logger.error(f"[identify-qari] unhandled error: {exc}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Processing failed: {exc}")
     finally:
         if temp_path and os.path.exists(temp_path):
             os.unlink(temp_path)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Error handlers
-# ─────────────────────────────────────────────────────────────────────────────
-
+# ---------------------------------------------------------------------------
+# Generic error handlers
+# ---------------------------------------------------------------------------
 @app.exception_handler(404)
-async def not_found_handler(request, exc):
+async def not_found(_req, _exc):
     return JSONResponse(
         status_code=404,
-        content={"success": False, "error": "Endpoint not found"}
+        content={"success": False, "error": "Endpoint not found. See /docs for available endpoints."},
     )
 
 
 @app.exception_handler(500)
-async def internal_error_handler(request, exc):
-    logger.error(f"Internal server error: {exc}")
+async def server_error(_req, exc):
+    logger.error(f"Unhandled 500: {exc}")
     return JSONResponse(
         status_code=500,
-        content={"success": False, "error": "Internal server error"}
+        content={"success": False, "error": "Internal server error."},
     )
 
 
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     import uvicorn
-
-    (BASE_DIR / "logs").mkdir(exist_ok=True)
-
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
         port=8000,
         reload=True,
-        log_level="info"
+        log_level="info",
     )

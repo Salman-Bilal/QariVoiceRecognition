@@ -5,7 +5,6 @@ dataset/raw/
 dataset/processed/
 pretrained_models/
 *.npy
-*.pkl
 *.pt
 *.pth
 logs/

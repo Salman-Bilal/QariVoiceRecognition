@@ -1,0 +1,199 @@
+2026-07-28 23:22:16,530 - api.main - INFO - Loading Qari style profiles...
+2026-07-28 23:23:19,882 - api.audio_validator - INFO - Audio validated: tmpjieak3tv.wav | 438.2s | 44100Hz | 36.86MB | RMS=0.1024
+2026-07-28 23:23:19,889 - api.main - INFO - [identify-qari] WhatsApp Audio 2026-07-25 at 8.15.27 PM.wav | {'file_size_mb': 36.86, 'sample_rate': 44100, 'duration_sec': 438.18, 'rms_energy': 0.102355, 'clipped_ratio': 0.0}
+2026-07-28 23:26:17,678 - api.audio_validator - INFO - Audio validated: tmpr31om1uj.wav | 34.3s | 48000Hz | 3.14MB | RMS=0.1350
+2026-07-28 23:26:17,678 - api.main - INFO - [identify-qari] Hamza_in_tone_of_Sheikh_Yasser (1).wav | {'file_size_mb': 3.14, 'sample_rate': 48000, 'duration_sec': 34.32, 'rms_energy': 0.134991, 'clipped_ratio': 0.0}
+2026-07-28 23:27:07,794 - api.audio_validator - INFO - Audio validated: tmpj0wxasig.wav | 35.9s | 16000Hz | 1.10MB | RMS=0.0430
+2026-07-28 23:27:07,794 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 1.1, 'sample_rate': 16000, 'duration_sec': 35.9, 'rms_energy': 0.04301, 'clipped_ratio': 0.0}
+2026-07-28 23:27:44,858 - api.audio_validator - INFO - Audio validated: tmpd_1vcw7k.wav | 36.3s | 16000Hz | 1.11MB | RMS=0.0395
+2026-07-28 23:27:44,858 - api.main - INFO - [compare-all-qaris] 1_Surah_Fatiha.wav
+2026-07-28 23:28:10,546 - api.audio_validator - INFO - Audio validated: tmpcd99ej8g.wav | 29.7s | 16000Hz | 0.91MB | RMS=0.0426
+2026-07-28 23:28:10,546 - api.main - INFO - [compare-all-qaris] 1_Surah_Fatiha.wav
+2026-07-28 23:28:41,004 - api.audio_validator - INFO - Audio validated: tmpkrvp2173.wav | 11.3s | 16000Hz | 0.35MB | RMS=0.0447
+2026-07-28 23:28:41,004 - api.main - INFO - [compare-all-qaris] 112_Surah_Ikhlas.wav
+2026-07-28 23:29:01,038 - api.audio_validator - INFO - Audio validated: tmppf_eh9_j.wav | 32.1s | 16000Hz | 0.98MB | RMS=0.0408
+2026-07-28 23:29:01,038 - api.main - INFO - [compare-all-qaris] 1_Surah_Fatiha.wav
+2026-07-28 23:47:37,210 - api.audio_validator - INFO - Audio validated: tmpgywzxr1f.wav | 32.1s | 16000Hz | 0.98MB | RMS=0.0408
+2026-07-28 23:47:37,210 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 0.98, 'sample_rate': 16000, 'duration_sec': 32.13, 'rms_energy': 0.04085, 'clipped_ratio': 0.0}
+2026-07-28 23:48:06,333 - api.audio_validator - INFO - Audio validated: tmp26jwus07.wav | 32.1s | 16000Hz | 0.98MB | RMS=0.0408
+2026-07-28 23:48:06,333 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 0.98, 'sample_rate': 16000, 'duration_sec': 32.13, 'rms_energy': 0.04085, 'clipped_ratio': 0.0}
+2026-07-28 23:48:26,948 - api.audio_validator - INFO - Audio validated: tmpp0l820q8.wav | 35.9s | 16000Hz | 1.10MB | RMS=0.0430
+2026-07-28 23:48:26,948 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 1.1, 'sample_rate': 16000, 'duration_sec': 35.9, 'rms_energy': 0.04301, 'clipped_ratio': 0.0}
+2026-07-28 23:48:48,263 - api.audio_validator - INFO - Audio validated: tmpx0nixysz.wav | 29.7s | 16000Hz | 0.91MB | RMS=0.0426
+2026-07-28 23:48:48,263 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 0.91, 'sample_rate': 16000, 'duration_sec': 29.73, 'rms_energy': 0.042585, 'clipped_ratio': 0.0}
+2026-07-28 23:49:22,393 - api.audio_validator - INFO - Audio validated: tmpuystt6pt.wav | 36.4s | 16000Hz | 1.11MB | RMS=0.0388
+2026-07-28 23:49:22,393 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 1.11, 'sample_rate': 16000, 'duration_sec': 36.45, 'rms_energy': 0.038782, 'clipped_ratio': 0.0}
+2026-07-28 23:51:33,338 - api.audio_validator - INFO - Audio validated: tmpre6bpf1y.wav | 35.9s | 16000Hz | 1.10MB | RMS=0.0430
+2026-07-28 23:51:33,339 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 1.1, 'sample_rate': 16000, 'duration_sec': 35.9, 'rms_energy': 0.04301, 'clipped_ratio': 0.0}
+2026-07-28 23:53:07,287 - api.audio_validator - INFO - Audio validated: tmpaejo14ec.wav | 29.7s | 16000Hz | 0.91MB | RMS=0.0426
+2026-07-28 23:53:07,287 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 0.91, 'sample_rate': 16000, 'duration_sec': 29.73, 'rms_energy': 0.042585, 'clipped_ratio': 0.0}
+2026-07-28 23:54:59,710 - api.audio_validator - INFO - Audio validated: tmpcqh_sya9.wav | 36.4s | 16000Hz | 1.11MB | RMS=0.0388
+2026-07-28 23:54:59,710 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 1.11, 'sample_rate': 16000, 'duration_sec': 36.45, 'rms_energy': 0.038782, 'clipped_ratio': 0.0}
+2026-07-28 23:56:33,493 - api.audio_validator - INFO - Audio validated: tmpttbnidwe.wav | 38.0s | 16000Hz | 1.16MB | RMS=0.0452
+2026-07-28 23:56:33,495 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 1.16, 'sample_rate': 16000, 'duration_sec': 38.05, 'rms_energy': 0.045239, 'clipped_ratio': 0.0}
+2026-07-28 23:58:04,701 - api.audio_validator - INFO - Audio validated: tmpzkgpb5_u.wav | 30.6s | 16000Hz | 0.93MB | RMS=0.0435
+2026-07-28 23:58:04,701 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 0.93, 'sample_rate': 16000, 'duration_sec': 30.56, 'rms_energy': 0.043536, 'clipped_ratio': 0.0}
+2026-07-29 00:21:08,366 - api.main - INFO - Loading Qari style profiles...
+2026-07-29 00:21:43,531 - api.audio_validator - INFO - Audio validated: tmpvkebj542.wav | 37.4s | 16000Hz | 1.14MB | RMS=0.0453
+2026-07-29 00:21:43,531 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 1.14, 'sample_rate': 16000, 'duration_sec': 37.38, 'rms_energy': 0.045344, 'clipped_ratio': 0.0}
+2026-07-29 00:23:05,045 - api.audio_validator - INFO - Audio validated: tmpmqqbyuxv.wav | 39.6s | 16000Hz | 1.21MB | RMS=0.0485
+2026-07-29 00:23:05,045 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 1.21, 'sample_rate': 16000, 'duration_sec': 39.58, 'rms_energy': 0.04846, 'clipped_ratio': 0.0}
+2026-07-29 00:24:33,873 - api.audio_validator - INFO - Audio validated: tmpk2kpqocc.wav | 37.2s | 16000Hz | 1.14MB | RMS=0.0470
+2026-07-29 00:24:33,873 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 1.14, 'sample_rate': 16000, 'duration_sec': 37.22, 'rms_energy': 0.046994, 'clipped_ratio': 0.0}
+2026-07-29 00:26:39,773 - api.audio_validator - INFO - Audio validated: tmp376ylhvg.wav | 39.7s | 16000Hz | 1.21MB | RMS=0.0431
+2026-07-29 00:26:39,774 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 1.21, 'sample_rate': 16000, 'duration_sec': 39.68, 'rms_energy': 0.043144, 'clipped_ratio': 0.0}
+2026-07-29 00:27:55,588 - api.audio_validator - INFO - Audio validated: tmpdb0k4sgb.wav | 32.1s | 16000Hz | 0.98MB | RMS=0.0408
+2026-07-29 00:27:55,588 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 0.98, 'sample_rate': 16000, 'duration_sec': 32.13, 'rms_energy': 0.04085, 'clipped_ratio': 0.0}
+2026-07-29 00:28:57,637 - api.audio_validator - INFO - Audio validated: tmpeqh_55nz.wav | 44.6s | 16000Hz | 1.36MB | RMS=0.0443
+2026-07-29 00:28:57,638 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 1.36, 'sample_rate': 16000, 'duration_sec': 44.61, 'rms_energy': 0.044251, 'clipped_ratio': 0.0}
+2026-07-29 00:29:30,298 - api.audio_validator - INFO - Audio validated: tmpmu1_iw84.wav | 44.6s | 16000Hz | 1.36MB | RMS=0.0443
+2026-07-29 00:29:30,298 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 1.36, 'sample_rate': 16000, 'duration_sec': 44.61, 'rms_energy': 0.044251, 'clipped_ratio': 0.0}
+2026-07-29 01:22:17,902 - main - INFO - Loading ECAPA-TDNN model (primary identification engine)...
+2026-07-29 01:22:17,905 - speechbrain.utils.fetching - INFO - Fetch hyperparams.yaml: Using existing file/symlink in E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\model_cache\spkrec-ecapa-voxceleb\hyperparams.yaml.
+2026-07-29 01:22:17,905 - speechbrain.utils.fetching - INFO - Fetch custom.py: Delegating to Huggingface hub, source speechbrain/spkrec-ecapa-voxceleb.
+2026-07-29 01:22:17,952 - watchfiles.main - INFO - 5 changes detected
+2026-07-29 01:22:18,542 - main - ERROR - Failed to load ECAPA engine: hf_hub_download() got an unexpected keyword argument 'use_auth_token'
+2026-07-29 01:22:18,542 - main - INFO - Loading Qari style profiles (secondary style engine)...
+2026-07-29 01:22:18,542 - main - INFO - Style profiles ready -- 12 Qaris.
+2026-07-29 01:23:28,258 - watchfiles.main - INFO - 1 change detected
+2026-07-29 01:23:41,243 - watchfiles.main - INFO - 1 change detected
+2026-07-29 01:26:24,585 - api.main - INFO - Loading ECAPA-TDNN model (primary identification engine)...
+2026-07-29 01:26:24,585 - speechbrain.utils.fetching - INFO - Fetch hyperparams.yaml: Using existing file/symlink in E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\model_cache\spkrec-ecapa-voxceleb\hyperparams.yaml.
+2026-07-29 01:26:24,585 - speechbrain.utils.fetching - INFO - Fetch custom.py: Delegating to Huggingface hub, source speechbrain/spkrec-ecapa-voxceleb.
+2026-07-29 01:26:24,965 - api.main - ERROR - Failed to load ECAPA engine: hf_hub_download() got an unexpected keyword argument 'use_auth_token'
+2026-07-29 01:26:24,965 - api.main - INFO - Loading Qari style profiles (secondary style engine)...
+2026-07-29 01:26:24,966 - api.main - INFO - Style profiles ready -- 12 Qaris.
+2026-07-29 01:26:51,495 - api.audio_validator - INFO - Audio validated: tmpv2k28gu8.wav | 44.6s | 16000Hz | 1.36MB | RMS=0.0443
+2026-07-29 01:26:51,495 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 1.36, 'sample_rate': 16000, 'duration_sec': 44.61, 'rms_energy': 0.044251, 'clipped_ratio': 0.0}
+2026-07-29 01:27:51,386 - api.audio_validator - INFO - Audio validated: tmparz2l_w2.wav | 44.6s | 16000Hz | 1.36MB | RMS=0.0443
+2026-07-29 01:27:51,386 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 1.36, 'sample_rate': 16000, 'duration_sec': 44.61, 'rms_energy': 0.044251, 'clipped_ratio': 0.0}
+2026-07-29 01:27:51,407 - speechbrain.utils.fetching - INFO - Fetch hyperparams.yaml: Using existing file/symlink in E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\model_cache\spkrec-ecapa-voxceleb\hyperparams.yaml.
+2026-07-29 01:27:51,408 - speechbrain.utils.fetching - INFO - Fetch custom.py: Delegating to Huggingface hub, source speechbrain/spkrec-ecapa-voxceleb.
+2026-07-29 01:27:51,408 - api.main - ERROR - Error in identify_qari: hf_hub_download() got an unexpected keyword argument 'use_auth_token'
+Traceback (most recent call last):
+  File "E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\api\main.py", line 287, in identify_qari
+    all_qari_results = get_top5_similar(temp_path, top_n=12)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\matching\similarity.py", line 122, in get_top5_similar
+    user_embedding = extract_user_embedding(audio_path)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\matching\similarity.py", line 57, in extract_user_embedding
+    classifier = _load_classifier()
+                 ^^^^^^^^^^^^^^^^^^
+  File "E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\matching\similarity.py", line 31, in _load_classifier
+    _classifier = EncoderClassifier.from_hparams(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\venv\Lib\site-packages\speechbrain\inference\interfaces.py", line 461, in from_hparams
+    pymodule_local_path = fetch(
+                          ^^^^^^
+  File "E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\venv\Lib\site-packages\speechbrain\utils\fetching.py", line 158, in fetch
+    fetched_file = huggingface_hub.hf_hub_download(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\venv\Lib\site-packages\huggingface_hub\utils\_validators.py", line 88, in _inner_fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: hf_hub_download() got an unexpected keyword argument 'use_auth_token'
+2026-07-29 01:29:35,305 - api.main - INFO - Loading ECAPA-TDNN model (primary identification engine)...
+2026-07-29 01:29:35,305 - speechbrain.utils.fetching - INFO - Fetch hyperparams.yaml: Using existing file/symlink in E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\model_cache\spkrec-ecapa-voxceleb\hyperparams.yaml.
+2026-07-29 01:29:35,305 - speechbrain.utils.fetching - INFO - Fetch custom.py: Delegating to Huggingface hub, source speechbrain/spkrec-ecapa-voxceleb.
+2026-07-29 01:29:36,421 - api.main - ERROR - Failed to load ECAPA engine: 'str' object has no attribute 'keys'
+2026-07-29 01:29:36,421 - api.main - INFO - Loading Qari style profiles (secondary style engine)...
+2026-07-29 01:29:36,421 - api.main - INFO - Style profiles ready -- 12 Qaris.
+2026-07-29 01:29:58,232 - api.audio_validator - INFO - Audio validated: tmpk6lgyty2.wav | 44.6s | 16000Hz | 1.36MB | RMS=0.0443
+2026-07-29 01:29:58,232 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 1.36, 'sample_rate': 16000, 'duration_sec': 44.61, 'rms_energy': 0.044251, 'clipped_ratio': 0.0}
+2026-07-29 01:29:58,232 - speechbrain.utils.fetching - INFO - Fetch hyperparams.yaml: Using existing file/symlink in E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\model_cache\spkrec-ecapa-voxceleb\hyperparams.yaml.
+2026-07-29 01:29:58,232 - speechbrain.utils.fetching - INFO - Fetch custom.py: Delegating to Huggingface hub, source speechbrain/spkrec-ecapa-voxceleb.
+2026-07-29 01:29:58,500 - api.main - ERROR - Error in identify_qari: 'str' object has no attribute 'keys'
+Traceback (most recent call last):
+  File "E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\api\main.py", line 287, in identify_qari
+    all_qari_results = get_top5_similar(temp_path, top_n=12)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\matching\similarity.py", line 122, in get_top5_similar
+    user_embedding = extract_user_embedding(audio_path)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\matching\similarity.py", line 57, in extract_user_embedding
+    classifier = _load_classifier()
+                 ^^^^^^^^^^^^^^^^^^
+  File "E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\matching\similarity.py", line 31, in _load_classifier
+    _classifier = EncoderClassifier.from_hparams(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\venv\Lib\site-packages\speechbrain\inference\interfaces.py", line 484, in from_hparams
+    hparams = load_hyperpyyaml(fin, overrides)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\venv\Lib\site-packages\hyperpyyaml\core.py", line 199, in load_hyperpyyaml
+    removal_keys = [k for k in hparams.keys() if k.startswith("__")]
+                               ^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'keys'
+2026-07-29 01:32:33,511 - api.main - INFO - Loading ECAPA-TDNN model (primary identification engine)...
+2026-07-29 01:32:33,511 - speechbrain.utils.fetching - INFO - Fetch hyperparams.yaml: Delegating to Huggingface hub, source speechbrain/spkrec-ecapa-voxceleb.
+2026-07-29 01:32:34,371 - speechbrain.utils.fetching - INFO - HF fetch: E:\Apps\huggingface_cache\hub\models--speechbrain--spkrec-ecapa-voxceleb\snapshots\0f99f2d0ebe89ac095bcc5903c4dd8f72b367286\hyperparams.yaml
+2026-07-29 01:32:34,371 - speechbrain.utils.fetching - INFO - Fetch custom.py: Delegating to Huggingface hub, source speechbrain/spkrec-ecapa-voxceleb.
+2026-07-29 01:32:35,178 - speechbrain.utils.fetching - INFO - Fetch embedding_model.ckpt: Delegating to Huggingface hub, source speechbrain/spkrec-ecapa-voxceleb.
+2026-07-29 01:32:35,450 - speechbrain.utils.fetching - INFO - HF fetch: E:\Apps\huggingface_cache\hub\models--speechbrain--spkrec-ecapa-voxceleb\snapshots\0f99f2d0ebe89ac095bcc5903c4dd8f72b367286\embedding_model.ckpt
+2026-07-29 01:32:35,457 - speechbrain.utils.fetching - INFO - Fetch mean_var_norm_emb.ckpt: Delegating to Huggingface hub, source speechbrain/spkrec-ecapa-voxceleb.
+2026-07-29 01:32:36,064 - speechbrain.utils.fetching - INFO - HF fetch: E:\Apps\huggingface_cache\hub\models--speechbrain--spkrec-ecapa-voxceleb\snapshots\0f99f2d0ebe89ac095bcc5903c4dd8f72b367286\mean_var_norm_emb.ckpt
+2026-07-29 01:32:36,075 - speechbrain.utils.fetching - INFO - Fetch classifier.ckpt: Delegating to Huggingface hub, source speechbrain/spkrec-ecapa-voxceleb.
+2026-07-29 01:32:36,338 - speechbrain.utils.fetching - INFO - HF fetch: E:\Apps\huggingface_cache\hub\models--speechbrain--spkrec-ecapa-voxceleb\snapshots\0f99f2d0ebe89ac095bcc5903c4dd8f72b367286\classifier.ckpt
+2026-07-29 01:32:36,338 - speechbrain.utils.fetching - INFO - Fetch label_encoder.txt: Delegating to Huggingface hub, source speechbrain/spkrec-ecapa-voxceleb.
+2026-07-29 01:32:36,672 - speechbrain.utils.fetching - INFO - HF fetch: E:\Apps\huggingface_cache\hub\models--speechbrain--spkrec-ecapa-voxceleb\snapshots\0f99f2d0ebe89ac095bcc5903c4dd8f72b367286\label_encoder.txt
+2026-07-29 01:32:36,688 - speechbrain.utils.parameter_transfer - INFO - Loading pretrained files for: embedding_model, mean_var_norm_emb, classifier, label_encoder
+2026-07-29 01:32:37,266 - api.main - INFO - ECAPA-TDNN ready -- 12 Qari reference centroids loaded: ['Abdul Basit Abdul Samad', 'Abdul Rehman Al Sudais', 'Abdullah Al-Johany', 'Bandar Balilah', 'Fares Abbad', 'Maher Al-Muaiqly', 'Minshawi', 'Mishary Al-Fasay', 'Mohammed Ayyub', 'Saad Al-Ghamdi', 'Saud Al-Shuraim', 'Yasser Al-Dosari']
+2026-07-29 01:32:37,266 - api.main - INFO - Loading Qari style profiles (secondary style engine)...
+2026-07-29 01:32:37,266 - api.main - INFO - Style profiles ready -- 12 Qaris.
+2026-07-29 01:34:59,759 - api.audio_validator - INFO - Audio validated: tmprqk_1za0.wav | 36.4s | 16000Hz | 1.11MB | RMS=0.0388
+2026-07-29 01:34:59,759 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 1.11, 'sample_rate': 16000, 'duration_sec': 36.45, 'rms_energy': 0.038782, 'clipped_ratio': 0.0}
+2026-07-29 01:35:26,819 - api.audio_validator - INFO - Audio validated: tmp6r_744f0.wav | 29.7s | 16000Hz | 0.91MB | RMS=0.0426
+2026-07-29 01:35:26,819 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 0.91, 'sample_rate': 16000, 'duration_sec': 29.73, 'rms_energy': 0.042585, 'clipped_ratio': 0.0}
+2026-07-29 01:35:51,263 - api.audio_validator - INFO - Audio validated: tmp9l15qpe6.wav | 44.6s | 16000Hz | 1.36MB | RMS=0.0443
+2026-07-29 01:35:51,263 - api.main - INFO - [identify-qari] 1_Surah_Fatiha.wav | {'file_size_mb': 1.36, 'sample_rate': 16000, 'duration_sec': 44.61, 'rms_energy': 0.044251, 'clipped_ratio': 0.0}
+2026-07-29 01:36:23,534 - api.audio_validator - INFO - Audio validated: tmpu3fc0lpr.mp3 | 30.1s | 48000Hz | 0.69MB | RMS=0.0507
+2026-07-29 01:36:23,534 - api.main - INFO - [identify-qari] Rehman .mp3 | {'file_size_mb': 0.69, 'sample_rate': 48000, 'duration_sec': 30.14, 'rms_energy': 0.050736, 'clipped_ratio': 0.0}
+2026-07-29 01:36:42,700 - api.audio_validator - INFO - Audio validated: tmp7ka_dt0y.mp3 | 18.9s | 48000Hz | 0.43MB | RMS=0.0952
+2026-07-29 01:36:42,700 - api.main - INFO - [identify-qari] testing_ekrash.mp3 | {'file_size_mb': 0.43, 'sample_rate': 48000, 'duration_sec': 18.94, 'rms_energy': 0.095177, 'clipped_ratio': 0.0}
+2026-07-29 01:37:02,710 - api.audio_validator - INFO - Audio validated: tmpn7b7qhp7.mp3 | 37.3s | 48000Hz | 0.85MB | RMS=0.0392
+2026-07-29 01:37:02,710 - api.main - INFO - [identify-qari] test 23.mp3 | {'file_size_mb': 0.85, 'sample_rate': 48000, 'duration_sec': 37.34, 'rms_energy': 0.039243, 'clipped_ratio': 0.0}
+2026-07-29 01:37:34,389 - api.audio_validator - INFO - Audio validated: tmpog37ob04.wav | 11.9s | 48000Hz | 2.19MB | RMS=0.0427
+2026-07-29 01:37:34,389 - api.main - INFO - [identify-qari] Recording (12).wav | {'file_size_mb': 2.19, 'sample_rate': 48000, 'duration_sec': 11.95, 'rms_energy': 0.042736, 'clipped_ratio': 0.0}
+2026-07-29 01:37:49,635 - api.audio_validator - INFO - Audio validated: tmpt9lqk0lc.wav | 34.3s | 48000Hz | 3.14MB | RMS=0.1350
+2026-07-29 01:37:49,635 - api.main - INFO - [identify-qari] Hamza_in_tone_of_Sheikh_Yasser (1).wav | {'file_size_mb': 3.14, 'sample_rate': 48000, 'duration_sec': 34.32, 'rms_energy': 0.134991, 'clipped_ratio': 0.0}
+2026-07-29 01:38:14,645 - api.audio_validator - INFO - Audio validated: tmpc16m3b3q.wav | 438.2s | 44100Hz | 36.86MB | RMS=0.1024
+2026-07-29 01:38:14,653 - api.main - INFO - [identify-qari] WhatsApp Audio 2026-07-25 at 8.15.27 PM.wav | {'file_size_mb': 36.86, 'sample_rate': 44100, 'duration_sec': 438.18, 'rms_energy': 0.102355, 'clipped_ratio': 0.0}
+2026-07-29 01:51:26,837 - api.audio_validator - INFO - Audio validated: tmpi0upfn53.wav | 24.9s | 48000Hz | 4.55MB | RMS=0.0739
+2026-07-29 01:51:26,837 - api.main - INFO - [identify-qari] WhatsApp Audio 2026-07-29 at 1.46.22 AM.wav | {'file_size_mb': 4.55, 'sample_rate': 48000, 'duration_sec': 24.86, 'rms_energy': 0.073947, 'clipped_ratio': 0.0}
+2026-07-29 01:51:46,347 - api.audio_validator - INFO - Audio validated: tmpujmkpswn.wav | 32.5s | 48000Hz | 5.96MB | RMS=0.0671
+2026-07-29 01:51:46,347 - api.main - INFO - [identify-qari] WhatsApp Audio 2026-07-29 at 1.46.22 AM (1).wav | {'file_size_mb': 5.96, 'sample_rate': 48000, 'duration_sec': 32.54, 'rms_energy': 0.067101, 'clipped_ratio': 0.0}
+2026-07-29 01:52:05,125 - api.audio_validator - INFO - Audio validated: tmpvsa8e2ly.wav | 24.9s | 48000Hz | 4.55MB | RMS=0.0739
+2026-07-29 01:52:05,125 - api.main - INFO - [identify-qari] WhatsApp Audio 2026-07-29 at 1.46.22 AM.wav | {'file_size_mb': 4.55, 'sample_rate': 48000, 'duration_sec': 24.86, 'rms_energy': 0.073947, 'clipped_ratio': 0.0}
+2026-07-29 01:57:38,382 - api.audio_validator - INFO - Audio validated: tmp80uo9ijz.wav | 32.5s | 48000Hz | 5.96MB | RMS=0.0671
+2026-07-29 01:57:38,383 - api.main - INFO - [compare-all-qaris] WhatsApp Audio 2026-07-29 at 1.46.22 AM (1).wav
+2026-07-29 01:58:30,431 - api.audio_validator - INFO - Audio validated: tmpplqrvhur.wav | 24.9s | 48000Hz | 4.55MB | RMS=0.0739
+2026-07-29 01:58:30,431 - api.main - INFO - [compare-all-qaris] WhatsApp Audio 2026-07-29 at 1.46.22 AM.wav
+2026-07-29 02:01:26,305 - api.audio_validator - INFO - Audio validated: tmpd0pel8ym.wav | 32.5s | 48000Hz | 5.96MB | RMS=0.0671
+2026-07-29 02:01:26,305 - api.main - INFO - [identify-qari] WhatsApp Audio 2026-07-29 at 1.46.22 AM (1).wav | {'file_size_mb': 5.96, 'sample_rate': 48000, 'duration_sec': 32.54, 'rms_energy': 0.067101, 'clipped_ratio': 0.0}
+2026-07-29 02:10:00,488  INFO      qari_api  Warming up ECAPA-TDNN model...
+2026-07-29 02:10:00,489  INFO      speechbrain.utils.fetching  Fetch hyperparams.yaml: Using existing file/symlink in E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\model_cache\spkrec-ecapa-voxceleb\hyperparams.yaml.
+2026-07-29 02:10:00,489  INFO      speechbrain.utils.fetching  Fetch custom.py: Delegating to Huggingface hub, source speechbrain/spkrec-ecapa-voxceleb.
+2026-07-29 02:10:00,539  INFO      watchfiles.main  5 changes detected
+2026-07-29 02:10:01,464  INFO      speechbrain.utils.fetching  Fetch embedding_model.ckpt: Using existing file/symlink in E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\model_cache\spkrec-ecapa-voxceleb\embedding_model.ckpt.
+2026-07-29 02:10:01,479  INFO      speechbrain.utils.fetching  Fetch mean_var_norm_emb.ckpt: Using existing file/symlink in E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\model_cache\spkrec-ecapa-voxceleb\mean_var_norm_emb.ckpt.
+2026-07-29 02:10:01,481  INFO      speechbrain.utils.fetching  Fetch classifier.ckpt: Using existing file/symlink in E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\model_cache\spkrec-ecapa-voxceleb\classifier.ckpt.
+2026-07-29 02:10:01,481  INFO      speechbrain.utils.fetching  Fetch label_encoder.txt: Using existing file/symlink in E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\model_cache\spkrec-ecapa-voxceleb\label_encoder.ckpt.
+2026-07-29 02:10:01,485  INFO      speechbrain.utils.parameter_transfer  Loading pretrained files for: embedding_model, mean_var_norm_emb, classifier, label_encoder
+2026-07-29 02:10:01,704  INFO      qari_api  Ready. 12 Qari centroids loaded: ['Abdul Basit Abdul Samad', 'Abdul Rehman Al Sudais', 'Abdullah Al-Johany', 'Bandar Balilah', 'Fares Abbad', 'Maher Al-Muaiqly', 'Minshawi', 'Mishary Al-Fasay', 'Mohammed Ayyub', 'Saad Al-Ghamdi', 'Saud Al-Shuraim', 'Yasser Al-Dosari']
+2026-07-29 03:52:55,465  INFO      qari_api  Warming up ECAPA-TDNN model...
+2026-07-29 03:52:55,470  INFO      speechbrain.utils.fetching  Fetch hyperparams.yaml: Using existing file/symlink in E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\model_cache\spkrec-ecapa-voxceleb\hyperparams.yaml.
+2026-07-29 03:52:55,472  INFO      speechbrain.utils.fetching  Fetch custom.py: Delegating to Huggingface hub, source speechbrain/spkrec-ecapa-voxceleb.
+2026-07-29 03:52:57,110  INFO      speechbrain.utils.fetching  Fetch embedding_model.ckpt: Using existing file/symlink in E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\model_cache\spkrec-ecapa-voxceleb\embedding_model.ckpt.
+2026-07-29 03:52:57,110  INFO      speechbrain.utils.fetching  Fetch mean_var_norm_emb.ckpt: Using existing file/symlink in E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\model_cache\spkrec-ecapa-voxceleb\mean_var_norm_emb.ckpt.
+2026-07-29 03:52:57,110  INFO      speechbrain.utils.fetching  Fetch classifier.ckpt: Using existing file/symlink in E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\model_cache\spkrec-ecapa-voxceleb\classifier.ckpt.
+2026-07-29 03:52:57,110  INFO      speechbrain.utils.fetching  Fetch label_encoder.txt: Using existing file/symlink in E:\Data\Final Year Project\Qari Voice Recognition\QariVoiceRecognition\model_cache\spkrec-ecapa-voxceleb\label_encoder.ckpt.
+2026-07-29 03:52:57,117  INFO      speechbrain.utils.parameter_transfer  Loading pretrained files for: embedding_model, mean_var_norm_emb, classifier, label_encoder
+2026-07-29 03:52:57,614  INFO      qari_api  Ready. 12 Qari centroids loaded: ['Abdul Basit Abdul Samad', 'Abdul Rehman Al Sudais', 'Abdullah Al-Johany', 'Bandar Balilah', 'Fares Abbad', 'Maher Al-Muaiqly', 'Minshawi', 'Mishary Al-Fasay', 'Mohammed Ayyub', 'Saad Al-Ghamdi', 'Saud Al-Shuraim', 'Yasser Al-Dosari']
+2026-07-29 03:53:42,141  INFO      api.audio_validator  Audio validated: tmpt5ai7_n3.wav | 24.9s | 48000Hz | 4.55MB | RMS=0.0739
+2026-07-29 03:53:42,141  INFO      qari_api  [identify-qari] file=WhatsApp Audio 2026-07-29 at 1.46.22 AM.wav  duration=24.86s  sr=48000Hz
+2026-07-29 03:54:06,557  INFO      api.audio_validator  Audio validated: tmpsdegc8h4.wav | 32.5s | 48000Hz | 5.96MB | RMS=0.0671
+2026-07-29 03:54:06,557  INFO      qari_api  [identify-qari] file=WhatsApp Audio 2026-07-29 at 1.46.22 AM (1).wav  duration=32.54s  sr=48000Hz
+2026-07-29 03:54:48,391  INFO      api.audio_validator  Audio validated: tmpm68i_20j.wav | 36.3s | 16000Hz | 1.11MB | RMS=0.0395
+2026-07-29 03:54:48,391  INFO      qari_api  [identify-qari] file=1_Surah_Fatiha.wav  duration=36.26s  sr=16000Hz
+2026-07-29 03:57:31,285  INFO      api.audio_validator  Audio validated: tmphvkd9ikv.wav | 16.0s | 16000Hz | 0.49MB | RMS=0.0388
+2026-07-29 03:57:31,285  INFO      qari_api  [identify-qari] file=112_Surah_Ikhlas.wav  duration=16.0s  sr=16000Hz

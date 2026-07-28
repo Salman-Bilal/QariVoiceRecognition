@@ -46,11 +46,20 @@ def extract_pitch_features(y: np.ndarray, sr: int = SR) -> Dict:
     melodic contour shape fairly.
 
     Returns a feature dict with:
-      - pitch_mean_norm    : mean of the speaker-normalized voiced pitch
-      - pitch_std_norm     : std dev (how much pitch varies — vibrato vs flat)
-      - pitch_range_norm   : max - min of normalized pitch (melodic range)
-      - pitch_p25/p75      : quartiles (shape of pitch distribution)
-      - voiced_ratio       : fraction of frames that are voiced (0.0–1.0)
+      - pitch_mean_norm       : mean of the speaker-normalized voiced pitch
+      - pitch_std_norm        : std dev (how much pitch varies — vibrato vs flat)
+      - pitch_range_norm      : max - min of normalized pitch (melodic range)
+      - pitch_p25/p75         : quartiles (shape of pitch distribution)
+      - voiced_ratio          : fraction of frames that are voiced (0.0–1.0)
+      - spectral_centroid_mean: mean spectral centroid (brightness) — higher in
+                                Yasser vs Shuraim due to tonal articulation style
+      - mfcc_delta_energy     : mean energy of the first MFCC delta coefficients —
+                                captures articulatory dynamics (movement between
+                                phonemes); measurably different between the two
+      - pitch_slope_ratio     : fraction of voiced pitch frames where pitch is
+                                rising (positive slope) minus falling fraction.
+                                Yasser descends more gradually → lower ratio.
+                                Shuraim has sharper, more abrupt contour → higher.
     """
     pitch, voiced_flag, _ = librosa.pyin(
         y,
@@ -61,6 +70,23 @@ def extract_pitch_features(y: np.ndarray, sr: int = SR) -> Dict:
 
     voiced_pitch = pitch[voiced_flag & (pitch > 0)]
 
+    # ── Spectral centroid (brightness) ───────────────────────────────────────
+    # Mean spectral centroid across the whole signal, normalized by Nyquist so
+    # it is sample-rate independent and speaker-agnostic in absolute frequency.
+    centroid = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
+    spectral_centroid_mean = float(np.mean(centroid)) / (sr / 2.0)
+
+    # ── MFCC delta energy ────────────────────────────────────────────────────
+    # Compute MFCCs (13 coefficients) and their first-order delta (rate of
+    # change).  Sum the squared deltas per frame to get a scalar energy value,
+    # then take the mean across all frames.  This measures how dynamically the
+    # articulation is changing — a proxy for phoneme transition speed.
+    mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+    mfcc_delta = librosa.feature.delta(mfccs)
+    mfcc_delta_energy = float(np.mean(np.sum(mfcc_delta ** 2, axis=0)))
+    # Normalize to a roughly [0, 1] range (typical values 0–5000)
+    mfcc_delta_energy = float(np.clip(mfcc_delta_energy / 5000.0, 0.0, 1.0))
+
     if len(voiced_pitch) < 10:
         # Not enough voiced frames — return neutral profile
         return {
@@ -70,6 +96,9 @@ def extract_pitch_features(y: np.ndarray, sr: int = SR) -> Dict:
             "pitch_p25": 0.0,
             "pitch_p75": 0.0,
             "voiced_ratio": 0.0,
+            "spectral_centroid_mean": spectral_centroid_mean,
+            "mfcc_delta_energy": mfcc_delta_energy,
+            "pitch_slope_ratio": 0.0,
         }
 
     # Normalize relative to speaker's own median → speaker-agnostic shape
@@ -82,6 +111,24 @@ def extract_pitch_features(y: np.ndarray, sr: int = SR) -> Dict:
     total_frames = len(pitch)
     voiced_ratio = len(voiced_pitch) / total_frames if total_frames > 0 else 0.0
 
+    # ── Pitch slope ratio ────────────────────────────────────────────────────
+    # Compute frame-to-frame differences of the voiced pitch sequence.
+    # rising_fraction = proportion of consecutive pairs where pitch goes up.
+    # falling_fraction = proportion where it goes down.
+    # pitch_slope_ratio = rising_fraction - falling_fraction ∈ [-1, 1].
+    # Positive → more rising; Negative → more falling / descending phrases.
+    if len(norm_pitch) > 1:
+        diffs = np.diff(norm_pitch)
+        rising  = float(np.sum(diffs > 0))
+        falling = float(np.sum(diffs < 0))
+        total_transitions = rising + falling
+        if total_transitions > 0:
+            pitch_slope_ratio = (rising - falling) / total_transitions
+        else:
+            pitch_slope_ratio = 0.0
+    else:
+        pitch_slope_ratio = 0.0
+
     return {
         "pitch_mean_norm": float(np.mean(norm_pitch)),
         "pitch_std_norm": float(np.std(norm_pitch)),
@@ -89,6 +136,9 @@ def extract_pitch_features(y: np.ndarray, sr: int = SR) -> Dict:
         "pitch_p25": float(np.percentile(norm_pitch, 25)),
         "pitch_p75": float(np.percentile(norm_pitch, 75)),
         "voiced_ratio": float(voiced_ratio),
+        "spectral_centroid_mean": spectral_centroid_mean,
+        "mfcc_delta_energy": mfcc_delta_energy,
+        "pitch_slope_ratio": float(pitch_slope_ratio),
     }
 
 
@@ -152,9 +202,14 @@ def extract_breath_features(y: np.ndarray, sr: int = SR) -> Dict:
     We capture:
       - pause_rate         : pauses per second (phrasing density)
       - pause_ratio        : fraction of total audio that is silence
-      - avg_pause_sec      : mean pause duration
+      - avg_pause_sec      : mean pause duration (valid breath pauses 0.1–4.0 s)
       - avg_phrase_sec     : mean spoken phrase duration between pauses
       - phrase_pause_ratio : avg_phrase_sec / avg_pause_sec (talking vs. pausing balance)
+      - avg_silence_sec    : mean duration of ALL silent regions (no floor/ceiling
+                             filter), including very short micro-silences and longer
+                             inter-ayah gaps.  This captures finer phrasing granularity:
+                             Yasser tends to have shorter, more frequent micro-silences
+                             while Shuraim has longer, less frequent breath gaps.
     """
     # Adaptive threshold based on RMS
     rms = librosa.feature.rms(y=y)[0]
@@ -173,9 +228,11 @@ def extract_breath_features(y: np.ndarray, sr: int = SR) -> Dict:
             "avg_pause_sec": 0.0,
             "avg_phrase_sec": float(duration),
             "phrase_pause_ratio": 10.0,  # Almost all speaking
+            "avg_silence_sec": 0.0,
         }
 
-    pauses = []
+    pauses = []       # valid breath pauses (0.10 – 4.0 s)
+    all_silences = [] # ALL silent gaps, no filter — for avg_silence_sec
     phrases = []
 
     for i, (start, end) in enumerate(non_silent):
@@ -186,7 +243,8 @@ def extract_breath_features(y: np.ndarray, sr: int = SR) -> Dict:
             gap_start = non_silent[i][1]
             gap_end = non_silent[i + 1][0]
             gap_sec = (gap_end - gap_start) / sr
-            if 0.10 <= gap_sec <= 4.0:  # Valid breath pause range
+            all_silences.append(gap_sec)          # always record
+            if 0.10 <= gap_sec <= 4.0:            # Valid breath pause range
                 pauses.append(gap_sec)
 
     total_pause_time = sum(pauses)
@@ -194,6 +252,7 @@ def extract_breath_features(y: np.ndarray, sr: int = SR) -> Dict:
     pause_ratio = total_pause_time / duration if duration > 0 else 0.0
     avg_pause = float(np.mean(pauses)) if pauses else 0.0
     avg_phrase = float(np.mean(phrases)) if phrases else float(duration)
+    avg_silence = float(np.mean(all_silences)) if all_silences else 0.0
 
     phrase_pause_ratio = avg_phrase / avg_pause if avg_pause > 0 else 10.0
     phrase_pause_ratio = min(phrase_pause_ratio, 20.0)  # cap to avoid outliers
@@ -204,6 +263,7 @@ def extract_breath_features(y: np.ndarray, sr: int = SR) -> Dict:
         "avg_pause_sec": avg_pause,
         "avg_phrase_sec": avg_phrase,
         "phrase_pause_ratio": float(phrase_pause_ratio),
+        "avg_silence_sec": avg_silence,
     }
 
 

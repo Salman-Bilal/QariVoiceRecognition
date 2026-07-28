@@ -120,9 +120,24 @@ def _cosine_similarity_to_score(user_vec: np.ndarray, ref_vec: np.ndarray) -> fl
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Features used for each component (must match keys in the profile dicts)
-PITCH_FEATURES  = ["pitch_std_norm", "pitch_range_norm", "pitch_p25", "pitch_p75", "voiced_ratio"]
+PITCH_FEATURES  = [
+    "pitch_std_norm",
+    "pitch_range_norm",
+    "pitch_p25",
+    "pitch_p75",
+    "voiced_ratio",
+    "spectral_centroid_mean",  # brightness — Yasser brighter than Shuraim
+    "mfcc_delta_energy",       # articulatory dynamics — different between the two
+    "pitch_slope_ratio",       # rising vs falling balance — Yasser descends more
+]
 RHYTHM_FEATURES = ["onset_rate_hz", "ioi_mean_sec", "ioi_cv"]
-BREATH_FEATURES = ["pause_rate", "pause_ratio", "avg_pause_sec", "phrase_pause_ratio"]
+BREATH_FEATURES = [
+    "pause_rate",
+    "pause_ratio",
+    "avg_pause_sec",
+    "phrase_pause_ratio",
+    "avg_silence_sec",         # all micro-silences included — finer phrasing granularity
+]
 
 
 def compute_pitch_similarity(
@@ -272,16 +287,6 @@ def compare_style_to_all_qaris(audio_path: str) -> List[Dict]:
         )
         overall = round(float(np.clip(overall, 0.0, 100.0)), 2)
 
-        # Match level label
-        if overall >= 72:
-            match_level = "Excellent Match"
-        elif overall >= 55:
-            match_level = "Good Match"
-        elif overall >= 35:
-            match_level = "Moderate Match"
-        else:
-            match_level = "Weak Match"
-
         # Style description based on dominant matching feature
         dominant = max(
             [("pitch", pitch_score), ("rhythm", rhythm_score), ("breath", breath_score)],
@@ -300,12 +305,52 @@ def compare_style_to_all_qaris(audio_path: str) -> List[Dict]:
             "pitch_score":       round(float(pitch_score),  2),
             "rhythm_score":      round(float(rhythm_score), 2),
             "breath_score":      round(float(breath_score), 2),
-            "match_level":       match_level,
+            "match_level":       "",    # filled in below after ranking
             "style_description": style_description,
         })
 
     # 4. Sort by overall score, best first
     results.sort(key=lambda x: x["overall_score"], reverse=True)
+
+    # 5. Assign match_level labels using rank-relative thresholds.
+    #
+    #    Old flat thresholds (≥72 → Excellent) caused Shuraim and Yasser to
+    #    BOTH land in "Excellent" even when only one was the real target.
+    #    New logic:
+    #      - Rank 1 always gets "Best Match" regardless of absolute score.
+    #      - Subsequent ranks are scored relative to rank-1, with a minimum
+    #        absolute threshold to avoid inflating a weak best-match.
+    #      - The gap between rank-1 and rank-2 is also stored so the UI/API
+    #        can communicate how decisive the top prediction is.
+    #
+    top_score = results[0]["overall_score"] if results else 0.0
+
+    for i, r in enumerate(results):
+        score = r["overall_score"]
+        gap_from_top = round(top_score - score, 2)
+        r["gap_from_top"] = gap_from_top
+
+        if i == 0:
+            # Rank 1 is always the best; label depends on absolute score quality
+            if score >= 68:
+                r["match_level"] = "Best Match"
+            elif score >= 50:
+                r["match_level"] = "Best Match (Moderate)"
+            else:
+                r["match_level"] = "Best Match (Weak)"
+        else:
+            # Rank 2+ — use gap from top to communicate relative distance
+            if gap_from_top <= 5:
+                # Very close to top — genuinely ambiguous
+                r["match_level"] = "Close Runner-Up"
+            elif gap_from_top <= 15:
+                r["match_level"] = "Good Match"
+            elif score >= 55:
+                r["match_level"] = "Moderate Match"
+            elif score >= 35:
+                r["match_level"] = "Weak Match"
+            else:
+                r["match_level"] = "Poor Match"
 
     return results
 

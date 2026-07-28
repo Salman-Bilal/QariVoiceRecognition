@@ -30,7 +30,7 @@ sys.path.append(str(BASE_DIR))
 from api.audio_validator import validate_audio_file as external_validate_audio, ValidationResult
 
 # ── Style-based matching engine (replaces ECAPA for identification) ──────────
-from matching.style_similarity import compare_style_to_all_qaris, _get_profiles
+from matching.style_similarity import compare_style_to_all_qaris, _get_profiles_and_stats
 from matching.style_profiles import load_style_profiles, STYLE_PROFILES_PATH
 
 # ── Recitation quality analysis (unchanged — used by /api/analyze-recitation) ─
@@ -79,7 +79,7 @@ async def startup_event():
     """Load style profiles on startup."""
     try:
         logger.info("Loading Qari style profiles...")
-        profiles = _get_profiles()
+        profiles, _ = _get_profiles_and_stats()
         logger.info(f"✅ Loaded style profiles for {len(profiles)} Qaris: {sorted(profiles.keys())}")
     except FileNotFoundError:
         logger.warning(
@@ -130,7 +130,7 @@ async def root():
 @app.get("/health")
 async def health_check():
     try:
-        profiles = _get_profiles()
+        profiles, _ = _get_profiles_and_stats()
         return {
             "status": "healthy",
             "style_profiles_loaded": True,
@@ -152,7 +152,7 @@ async def health_check():
 async def list_qaris():
     """Get list of available Qaris."""
     try:
-        profiles = _get_profiles()
+        profiles, _ = _get_profiles_and_stats()
         qaris = sorted(profiles.keys())
         return {
             "success": True,

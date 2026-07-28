@@ -193,9 +193,9 @@ def compute_breath_similarity(
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Weights for the three components (must sum to 1.0)
-PITCH_WEIGHT  = 0.40
-RHYTHM_WEIGHT = 0.35
-BREATH_WEIGHT = 0.25
+PITCH_WEIGHT  = 0.50
+RHYTHM_WEIGHT = 0.30
+BREATH_WEIGHT = 0.20
 
 
 def compare_style_to_all_qaris(audio_path: str) -> List[Dict]:
